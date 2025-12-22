@@ -792,13 +792,18 @@ if page == "Dashboard":
                 dept = bottleneck.get('department', 'N/A')
                 # German translation for department names (add more as needed)
                 dept_map = {
-                    'ED': 'Notaufnahme',
+                    'ER': 'Notaufnahme',
                     'ICU': 'Intensivstation',
-                    'OR': 'OP',
-                    'Surgery': 'OP',
+                    'Surgery': 'Chirurgie',
+                    'General Ward': 'Allgemeinstation',
+                    'Cardiology': 'Kardiologie',
+                    'Neurology': 'Neurologie',
+                    'Pediatrics': 'Pädiatrie',
+                    'Oncology': 'Onkologie',
+                    'Orthopedics': 'Orthopädie',
+                    'Maternity': 'Geburtshilfe',
                     'Radiology': 'Radiologie',
-                    'Ward': 'Station',
-                    'N/A': 'Bereich',
+                    'Other': 'Andere'
                 }
                 dept_de = dept_map.get(dept, dept)
                 # German time string
@@ -892,10 +897,32 @@ elif page == "Betrieb":
         col1, col2, col3 = st.columns([2, 2, 2])
         
         with col1:
-            # Bereich Dropdown
+            # Bereich Dropdown mit deutschen Übersetzungen
             all_alerts = db.get_alerts_by_time_range(24)
-            areas = ["Alle"] + sorted(list(set([a.get('department', 'N/A') for a in all_alerts if a.get('department')])))
-            selected_area = st.selectbox("Bereich", areas, key="ops_alert_area")
+            dept_map = {
+                'ER': 'Notaufnahme',
+                'ED': 'Notaufnahme',
+                'ICU': 'Intensivstation',
+                'Surgery': 'Chirurgie',
+                'General Ward': 'Allgemeinstation',
+                'Cardiology': 'Kardiologie',
+                'Neurology': 'Neurologie',
+                'Pediatrics': 'Pädiatrie',
+                'Oncology': 'Onkologie',
+                'Orthopedics': 'Orthopädie',
+                'Maternity': 'Geburtshilfe',
+                'Radiology': 'Radiologie',
+                'Ward': 'Station',
+                'Other': 'Andere',
+                'N/A': 'Bereich',
+            }
+            # Build mapping for all unique departments
+            unique_depts = sorted(list(set([a.get('department', 'N/A') for a in all_alerts if a.get('department')])))
+            areas_de = [dept_map.get(d, d) for d in unique_depts]
+            area_map = dict(zip(areas_de, unique_depts))
+            areas_de_display = ["Alle"] + areas_de
+            selected_area_de = st.selectbox("Bereich", areas_de_display, key="ops_alert_area")
+            selected_area = None if selected_area_de == "Alle" else area_map[selected_area_de]
         
         with col2:
             # Severity chips
@@ -927,7 +954,7 @@ elif page == "Betrieb":
         
         # Apply filters
         filtered_alerts = alerts
-        if selected_area != "Alle":
+        if selected_area is not None:
             filtered_alerts = [a for a in filtered_alerts if a.get('department') == selected_area]
         if "Alle" not in selected_severities:
             filtered_alerts = [a for a in filtered_alerts if a['severity'] in selected_severities]
@@ -937,7 +964,6 @@ elif page == "Betrieb":
             for alert in filtered_alerts:
                 severity_color = get_severity_color(alert['severity'])
                 badge_html = render_badge(alert['severity'].upper(), alert['severity'])
-                
                 # Get predicted minutes from related predictions if available
                 predictions = db.get_predictions(15)
                 predicted_minutes = None
@@ -945,7 +971,25 @@ elif page == "Betrieb":
                     if pred.get('department') == alert.get('department') and pred.get('prediction_type') in ['patient_arrival', 'bed_demand', 'resource_needed']:
                         predicted_minutes = pred.get('time_horizon_minutes')
                         break
-                
+                # Translate department for display
+                dept_map = {
+                    'ER': 'Notaufnahme',
+                    'ED': 'Notaufnahme',
+                    'ICU': 'Intensivstation',
+                    'Surgery': 'Chirurgie',
+                    'General Ward': 'Allgemeinstation',
+                    'Cardiology': 'Kardiologie',
+                    'Neurology': 'Neurologie',
+                    'Pediatrics': 'Pädiatrie',
+                    'Oncology': 'Onkologie',
+                    'Orthopedics': 'Orthopädie',
+                    'Maternity': 'Geburtshilfe',
+                    'Radiology': 'Radiologie',
+                    'Ward': 'Station',
+                    'Other': 'Andere',
+                    'N/A': 'Bereich',
+                }
+                dept_de = dept_map.get(alert.get('department', 'N/A'), alert.get('department', 'N/A'))
                 col1, col2 = st.columns([5, 1])
                 with col1:
                     pred_text = f" • Prognose: {predicted_minutes} Min." if predicted_minutes else ""
@@ -953,10 +997,10 @@ elif page == "Betrieb":
                     <div style="background: white; padding: 1rem; border-radius: 8px; margin-bottom: 0.75rem; border-left: 4px solid {severity_color}; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
                         <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
                             {badge_html}
-                            <span style="font-size: 0.75rem; color: #6b7280; font-weight: 500;">{alert.get('department', 'N/A')}</span>
+                            <span style="font-size: 0.75rem; color: #6b7280; font-weight: 500;">{dept_de}</span>
                             <span style="font-size: 0.75rem; color: #9ca3af;">•</span>
                             <span style="font-size: 0.75rem; color: #6b7280;">{format_time_ago(alert['timestamp'])}</span>
-                            {f'<span style="font-size: 0.75rem; color: #667eea;">{pred_text}</span>' if predicted_minutes else ''}
+                            {f'<span style=\"font-size: 0.75rem; color: #667eea;\">{pred_text}</span>' if predicted_minutes else ''}
                         </div>
                         <div style="font-weight: 600; color: #1f2937; font-size: 0.95rem;">
                             {alert['message']}
@@ -1000,16 +1044,16 @@ elif page == "Betrieb":
             # For MVP, we'll show all but could filter by rec_type or department
             pass
         
+        # German translation for explanation_score (trust level)
+        vertrauen_map = {'high': 'hoch', 'medium': 'mittel', 'low': 'niedrig'}
         if recommendations:
             for rec in recommendations:
                 priority_color = get_priority_color(rec['priority'])
-                badge_html = render_badge(rec['priority'].upper(), rec['priority'])
-                
-                # Get explanation score
-                explanation_score = rec.get('explanation_score', 'medium')
-                score_color = get_explanation_score_color(explanation_score)
-                score_badge = render_badge(f"Vertrauen: {explanation_score.upper()}", explanation_score if explanation_score != 'low' else 'medium')
-                
+                # German translation for priority
+                priority_de_map = {'high': 'hoch', 'medium': 'mittel', 'low': 'niedrig'}
+                priority_de = priority_de_map.get(rec['priority'], rec['priority'])
+                badge_html = render_badge(priority_de.upper(), rec['priority'])
+
                 # Impact tags (extract from department and rec_type)
                 impact_tags = []
                 if rec.get('department'):
@@ -1024,23 +1068,17 @@ elif page == "Betrieb":
                     }
                     rec_type = rec['rec_type']
                     impact_tags.append(rec_type_map.get(rec_type, rec_type.replace('_', ' ').title()))
-                
+
                 # Use new template format if available, otherwise fall back to old format
                 has_new_format = rec.get('action') and rec.get('reason')
-                
+
                 if has_new_format:
                     st.markdown(f"""
                     <div style="background: white; padding: 1.5rem; border-radius: 8px; margin-bottom: 1rem; border-left: 4px solid {priority_color}; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-                        <div style="display: flex; align-items: start; justify-content: space-between; margin-bottom: 1rem;">
-                            <div style="flex: 1;">
-                                <h4 style="margin: 0 0 0.5rem 0; color: #1f2937;">{rec['title']}</h4>
-                                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.75rem;">
-                                    {badge_html}
-                                    {score_badge}
-                                </div>
-                            </div>
+                        <div style="margin-bottom: 1rem;">
+                            <h4 style="margin: 0 0 0.5rem 0; color: #1f2937;">{rec['title']}</h4>
+                            <div style="margin-bottom: 0.75rem;">{badge_html}</div>
                         </div>
-                        
                         <div style="background: #f9fafb; padding: 1rem; border-radius: 6px; margin-bottom: 0.75rem;">
                             <div style="margin-bottom: 0.75rem;">
                                 <strong style="color: #1f2937; font-size: 0.875rem;">Maßnahme:</strong>
@@ -1059,7 +1097,6 @@ elif page == "Betrieb":
                                 <p style="margin: 0.25rem 0 0 0; color: #4b5563; line-height: 1.6;">{rec.get('safety_note', 'N/A')}</p>
                             </div>
                         </div>
-                        
                         <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
                             {' '.join([f'<span class="badge" style="background: #e5e7eb; color: #4b5563;">{tag}</span>' for tag in impact_tags])}
                         </div>
@@ -1089,7 +1126,6 @@ elif page == "Betrieb":
                         explanation = f"""
                         <strong>Begründung:</strong> {rec.get('reason', 'N/A')}<br><br>
                         <strong>Erwartete Auswirkung:</strong> {rec.get('expected_impact', 'N/A')}<br><br>
-                        <strong>Vertrauensniveau:</strong> {explanation_score.upper()} (basiert auf Trendstärke und Datenqualität)
                         """
                     else:
                         # Generate explanation based on rec_type
@@ -1218,35 +1254,83 @@ elif page == "Live-Metriken":
     metrics = db.get_recent_metrics(20)
     if metrics:
         df = pd.DataFrame(metrics)
-        
+        # German translation for metric types
+        metric_type_map = {
+            'patient_count': 'Patientenzahl',
+            'wait_time': 'Wartezeit',
+            'occupancy': 'Auslastung',
+            'throughput': 'Durchsatz',
+            'waiting_count': 'Wartende Patienten',
+            'ed_load': 'Notaufnahme-Auslastung',
+            'or_load': 'OP-Auslastung',
+            'staff_load': 'Personal-Auslastung',
+            'transport_queue': 'Transport-Warteschlange',
+            'rooms_free': 'Freie Räume',
+            'beds_free': 'Freie Betten',
+            # Add more as needed
+        }
         # Gruppieren nach Metrik-Typ
         metric_types = df['metric_type'].unique()
-        
         cols = st.columns(3)
         for idx, metric_type in enumerate(metric_types[:6]):
             col_idx = idx % 3
             with cols[col_idx]:
                 latest = df[df['metric_type'] == metric_type].iloc[0]
+                label = metric_type_map.get(metric_type, metric_type.replace('_', ' ').title())
+                # Fix units and formatting for specific metrics
+                if metric_type in ['patient_count', 'waiting_count']:
+                    unit = ''
+                    value_str = f"{int(round(latest['value']))}"
+                elif metric_type in ['occupancy', 'ed_load', 'or_load', 'staff_load']:
+                    unit = '%'
+                    value_str = f"{latest['value']:.1f} {unit}"
+                else:
+                    unit = latest.get('unit', '')
+                    value_str = f"{latest['value']:.1f} {unit}"
                 st.metric(
-                    metric_type.replace('_', ' ').title(),
-                    f"{latest['value']:.1f} {latest.get('unit', '')}",
+                    label,
+                    value_str,
                     delta=None
                 )
-        
         # Time series chart
         st.markdown("---")
         st.markdown("### Metrik-Trends")
-        
-        selected_metric = st.selectbox("Metrik-Typ auswählen", metric_types, key="metric_select")
+        # Use German labels in selectbox
+        metric_type_labels = [metric_type_map.get(mt, mt.replace('_', ' ').title()) for mt in metric_types]
+        metric_type_label_map = dict(zip(metric_type_labels, metric_types))
+        selected_label = st.selectbox("Metrik-Typ auswählen", metric_type_labels, key="metric_select")
+        selected_metric = metric_type_label_map[selected_label]
         metric_data = df[df['metric_type'] == selected_metric].sort_values('timestamp')
-        
+        # German translation for department names
+        dept_map = {
+            'ER': 'Notaufnahme',
+            'ICU': 'Intensivstation',
+            'Surgery': 'Chirurgie',
+            'General Ward': 'Allgemeinstation',
+            'Cardiology': 'Kardiologie',
+            'Neurology': 'Neurologie',
+            'Pediatrics': 'Pädiatrie',
+            'Oncology': 'Onkologie',
+            'Orthopedics': 'Orthopädie',
+            'Maternity': 'Geburtshilfe',
+            'Radiology': 'Radiologie',
+            'Other': 'Andere'
+        }
         if not metric_data.empty:
+            label = metric_type_map.get(selected_metric, selected_metric.replace('_', ' ').title())
+            # Map department names to German for plotting and show as 'Abteilung' in legend
+            metric_data = metric_data.copy()
+            if 'department' in metric_data.columns:
+                metric_data['Abteilung'] = metric_data['department'].map(lambda d: dept_map.get(d, d))
+                color_col = 'Abteilung'
+            else:
+                color_col = 'department'
             fig = px.line(
                 metric_data,
                 x='timestamp',
                 y='value',
-                color='department',
-                title=f"{selected_metric.replace('_', ' ').title()} Verlauf",
+                color=color_col,
+                title=f"{label} Verlauf",
                 markers=True
             )
             fig.update_layout(
@@ -1266,18 +1350,56 @@ elif page == "Vorhersagen":
     predictions = db.get_predictions(15)
     if predictions:
         df = pd.DataFrame(predictions)
-        
+        # German translation for prediction types
+        pred_type_map = {
+            'patient_arrival': 'Patientenzugang',
+            'bed_demand': 'Bettenbedarf',
+            'resource_needed': 'Ressourcenbedarf',
+            'waiting_count': 'Wartende Patienten',
+            'ed_load': 'Notaufnahme-Auslastung',
+            'or_load': 'OP-Auslastung',
+            'staff_load': 'Personal-Auslastung',
+            'transport_queue': 'Transport-Warteschlange',
+            'rooms_free': 'Freie Räume',
+            'beds_free': 'Freie Betten',
+            # Add more as needed
+        }
+        dept_map = {
+            'ER': 'Notaufnahme',
+            'ICU': 'Intensivstation',
+            'Surgery': 'Chirurgie',
+            'General Ward': 'Allgemeinstation',
+            'Cardiology': 'Kardiologie',
+            'Neurology': 'Neurologie',
+            'Pediatrics': 'Pädiatrie',
+            'Oncology': 'Onkologie',
+            'Orthopedics': 'Orthopädie',
+            'Maternity': 'Geburtshilfe',
+            'Radiology': 'Radiologie',
+            'Other': 'Andere'
+        }
         # Vorhersagen gruppieren
         st.markdown("#### Bevorstehende Vorhersagen")
         for pred in predictions[:10]:
             confidence_color = "#10B981" if pred['confidence'] > 0.8 else "#F59E0B" if pred['confidence'] > 0.7 else "#EF4444"
+            # Translate prediction type
+            pred_type = pred_type_map.get(pred['prediction_type'], pred['prediction_type'].replace('_', ' ').title())
+            # Translate department
+            dept = pred.get('department', 'N/A')
+            dept_de = dept_map.get(dept, dept)
+            # Translate time string
+            minutes = pred['time_horizon_minutes']
+            if minutes == 1:
+                time_str = f'in {minutes} Minute'
+            else:
+                time_str = f'in {minutes} Minuten'
             st.markdown(f"""
             <div style="background: white; padding: 1rem; border-radius: 8px; margin-bottom: 0.5rem;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <div>
-                        <strong>{pred['prediction_type'].replace('_', ' ').title()}</strong>
+                        <strong>{pred_type}</strong>
                         <div style="color: #6b7280; font-size: 0.875rem; margin-top: 0.25rem;">
-                            {pred.get('department', 'N/A')} • in {pred['time_horizon_minutes']} Min.
+                            {dept_de} • {time_str}
                         </div>
                     </div>
                     <div style="text-align: right;">
@@ -1297,12 +1419,28 @@ elif page == "Vorhersagen":
         st.markdown("### Prognose-Vertrauen nach Zeithorizont")
         
         if len(df) > 0:
+            # German translation for prediction types
+            pred_type_map = {
+                'patient_arrival': 'Patientenzugang',
+                'bed_demand': 'Bettenbedarf',
+                'resource_needed': 'Ressourcenbedarf',
+                'waiting_count': 'Wartende Patienten',
+                'ed_load': 'Notaufnahme-Auslastung',
+                'or_load': 'OP-Auslastung',
+                'staff_load': 'Personal-Auslastung',
+                'transport_queue': 'Transport-Warteschlange',
+                'rooms_free': 'Freie Räume',
+                'beds_free': 'Freie Betten',
+                # Add more as needed
+            }
+            df_plot = df.copy()
+            df_plot['Problem'] = df_plot['prediction_type'].map(lambda x: pred_type_map.get(x, x.replace('_', ' ').title()))
             fig = px.scatter(
-                df,
+                df_plot,
                 x='time_horizon_minutes',
                 y='confidence',
                 size='predicted_value',
-                color='prediction_type',
+                color='Problem',
                 hover_data=['department'],
                 title=""
             )
@@ -1321,19 +1459,46 @@ elif page == "Warnungen":
     alerts = db.get_active_alerts()
     
     if alerts:
-        # Filteroptionen
-        st.markdown("### Filter")
+
+        # German translation for severity and departments
+        severity_de_map = {'high': 'hoch', 'medium': 'mittel', 'low': 'niedrig'}
+        severity_en_map = {v: k for k, v in severity_de_map.items()}
+        dept_map = {
+            'ER': 'Notaufnahme',
+            'ED': 'Notaufnahme',
+            'ICU': 'Intensivstation',
+            'Surgery': 'Chirurgie',
+            'General Ward': 'Allgemeinstation',
+            'Cardiology': 'Kardiologie',
+            'Neurology': 'Neurologie',
+            'Pediatrics': 'Pädiatrie',
+            'Oncology': 'Onkologie',
+            'Orthopedics': 'Orthopädie',
+            'Maternity': 'Geburtshilfe',
+            'Radiology': 'Radiologie',
+            'Ward': 'Station',
+            'Other': 'Andere',
+            'N/A': 'Bereich',
+        }
+        # Build mapping for all unique departments
+        unique_depts = sorted(list(set([a.get('department', 'N/A') for a in alerts if a.get('department')])))
+        areas_de = [dept_map.get(d, d) for d in unique_depts]
+        area_map = dict(zip(areas_de, unique_depts))
+        areas_de_display = ["Alle"] + areas_de
         col1, col2 = st.columns(2)
         with col1:
-            severity_filter = st.selectbox("Nach Schweregrad filtern", ["Alle", "hoch", "mittel", "niedrig"], key="alert_severity")
+            severity_options = ["Alle", "hoch", "mittel", "niedrig"]
+            selected_severity_de = st.selectbox("Schweregrad", severity_options, key="alert_severity")
         with col2:
-            dept_filter = st.selectbox("Nach Bereich filtern", ["Alle"] + list(set([a.get('department', 'N/A') for a in alerts])), key="alert_dept")
-        
+            selected_area_de = st.selectbox("Bereich", areas_de_display, key="alert_dept")
+            selected_area = None if selected_area_de == "Alle" else area_map[selected_area_de]
+
         filtered_alerts = alerts
-        if severity_filter != "Alle":
-            filtered_alerts = [a for a in filtered_alerts if a['severity'] == severity_filter]
-        if dept_filter != "Alle":
-            filtered_alerts = [a for a in filtered_alerts if a.get('department') == dept_filter]
+        if selected_severity_de != "Alle":
+            selected_severity = severity_en_map[selected_severity_de]
+            filtered_alerts = [a for a in filtered_alerts if a['severity'] == selected_severity]
+        if selected_area is not None:
+            filtered_alerts = [a for a in filtered_alerts if a.get('department') == selected_area]
         
         st.markdown("")  # Abstand
         st.markdown("### Aktive Warnungen")
@@ -1341,16 +1506,33 @@ elif page == "Warnungen":
         
         for alert in filtered_alerts:
             severity_color = get_severity_color(alert['severity'])
-            badge_html = render_badge(alert['severity'].upper(), alert['severity'])
+            severity_de = severity_de_map.get(alert['severity'], alert['severity'])
+            badge_html = render_badge(severity_de.upper(), alert['severity'])
+            # German translation for alert_type/category
+            alert_type_map = {
+                'capacity': 'Kapazität',
+                'staffing': 'Personal',
+                'inventory': 'Inventar',
+                'device': 'Gerät',
+                'general': 'Allgemein',
+                'transport': 'Transport',
+                'patient': 'Patient',
+                'system': 'System',
+                'risk': 'Risiko',
+                'other': 'Andere',
+            }
+            alert_type_de = alert_type_map.get(alert.get('alert_type', 'general'), alert.get('alert_type', 'Allgemein'))
+            # Since all alert messages are now in German, just use the message as is
+            message_de = alert['message']
             col1, col2 = st.columns([4, 1])
-            
             with col1:
+                dept_de = dept_map.get(alert.get('department', 'N/A'), alert.get('department', 'N/A'))
                 st.markdown(f"""
                 <div style="background: white; padding: 1.25rem; border-radius: 8px; margin-bottom: 0.75rem; border-left: 4px solid {severity_color}; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
                     {badge_html}
-                    <strong style="margin-left: 0.5rem; color: #1f2937;">{alert['message']}</strong>
+                    <strong style="margin-left: 0.5rem; color: #1f2937;">{message_de}</strong>
                     <div style="color: #6b7280; font-size: 0.875rem; margin-top: 0.75rem;">
-                        {alert.get('department', 'N/A')} • {alert['alert_type']} • {format_time_ago(alert['timestamp'])}
+                        {dept_de} • {alert_type_de} • {format_time_ago(alert['timestamp'])}
                     </div>
                 </div>
                 """, unsafe_allow_html=True)

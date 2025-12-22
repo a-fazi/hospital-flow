@@ -205,7 +205,7 @@ class HospitalDB:
             conn.close()
             return
         
-        departments = ["ER", "ICU", "Surgery", "Cardiology", "General Ward"]
+        departments = ["Notaufnahme", "Intensivstation", "Chirurgie", "Kardiologie", "Allgemeinstation"]
         now = datetime.now()
         
         # Seed metrics
@@ -237,10 +237,10 @@ class HospitalDB:
         
         # Seed alerts
         alerts_data = [
-            ("capacity", "high", "ICU capacity at 92%", "ICU", 0, 0),
-            ("inventory", "medium", "Oxygen tanks below threshold", "ER", 0, 0),
-            ("device", "high", "Ventilator #V-203 requires maintenance", "ICU", 0, 0),
-            ("transport", "low", "Transport delay: 15 min", "Surgery", 1, 0),
+            ("Kapazität", "hoch", "Intensivstation-Kapazität bei 92%", "Intensivstation", 0, 0),
+            ("Inventar", "mittel", "Sauerstoffflaschen unter Schwellenwert", "Notaufnahme", 0, 0),
+            ("Gerät", "hoch", "Beatmungsgerät #V-203 benötigt Wartung", "Intensivstation", 0, 0),
+            ("Transport", "niedrig", "Transportverzögerung: 15 Min.", "Chirurgie", 1, 0),
         ]
         for alert in alerts_data:
             cursor.execute("""
@@ -254,37 +254,37 @@ class HospitalDB:
                 "capacity", 
                 "Erwägen Sie das Öffnen von Überlaufbetten",
                 "ICU-Auslastung hoch. Öffnen Sie 3 Überlaufbetten.",
-                "high",
+                "hoch",
                 "ICU",
                 "Öffnen Sie vorübergehend 3 Überlaufbetten im ICU-Bereich.",
                 "ICU-Kapazität bei 92% mit steigendem Trend. Aktuelle Belegung: 23/25 Betten.",
                 "Wartezeiten um 15-20 Minuten reduzieren. Kapazitätsüberlauf in den nächsten 30 Minuten verhindern.",
                 "Überprüfen Sie die Ausrüstungsbereitschaft der Überlaufbetten. Bestätigen Sie die Verfügbarkeit des Personals für zusätzliche Betten.",
-                "high"
+                "hoch"
             ),
             (
                 "staffing",
                 "Pflegekraft in die Notaufnahme umsetzen",
                 "Wartezeiten in der Notaufnahme steigen. Versetzen Sie 1 Pflegekraft von der Allgemeinstation.",
-                "medium",
+                "mittel",
                 "ER",
                 "Versetzen Sie vorübergehend 1 Mitarbeiter von Station B für 20 Minuten in die Notaufnahme.",
                 "Notaufnahme-Belastung steigt + Warteschlange nimmt zu. Aktuelle Wartezeit: 8 Patienten, Ø 12 Min.",
                 "Voraussichtliche Entlastung in 10 Minuten. Wartezeiten um 25-30% senken.",
                 "Menschliche Kontrolle: Verfügbarkeit vor Umsetzung prüfen. Station B Abdeckung sicherstellen.",
-                "medium"
+                "mittel"
             ),
             (
                 "inventory",
                 "Zusätzliche Vorräte bestellen",
                 "Sauerstoffflaschenbestand bei 15%. Bestellen Sie 20 Einheiten.",
-                "high",
+                "hoch",
                 "ER",
                 "Bestellen Sie sofort 20 Sauerstoffflaschen für die Notaufnahme.",
                 "Sauerstoffflaschenbestand bei 15% (3/20 Einheiten). Verbrauchsrate zeigt Engpassrisiko in 4-6 Stunden.",
                 "Versorgungsengpass verhindern. Kontinuierliche Patientenversorgung sicherstellen.",
                 "Lieferantenverfügbarkeit und Lieferzeit prüfen. Notfall-Lieferanten ggf. berücksichtigen.",
-                "high"
+                "hoch"
             ),
         ]
         for rec in recs_data:
@@ -296,9 +296,9 @@ class HospitalDB:
         
         # Seed transport
         transport_data = [
-            ("patient", "ER", "ICU", "high", "in_progress", 10, None),
-            ("equipment", "Storage", "Surgery", "medium", "pending", 15, None),
-            ("specimen", "Lab", "Pathology", "low", "completed", 8, 7),
+            ("Patient", "Notaufnahme", "Intensivstation", "hoch", "in_bearbeitung", 10, None),
+            ("Ausrüstung", "Lager", "Chirurgie", "mittel", "ausstehend", 15, None),
+            ("Probe", "Labor", "Pathologie", "niedrig", "abgeschlossen", 8, 7),
         ]
         for trans in transport_data:
             cursor.execute("""
@@ -308,10 +308,10 @@ class HospitalDB:
         
         # Seed inventory
         inventory_items = [
-            ("Oxygen Tanks", "Medical Gases", 15, 20, 100, "ER", "units"),
-            ("IV Fluids", "Supplies", 45, 30, 200, "ICU", "units"),
-            ("Surgical Masks", "PPE", 120, 50, 500, "Surgery", "boxes"),
-            ("Ventilator Filters", "Equipment", 8, 10, 50, "ICU", "units"),
+            ("Sauerstoffflaschen", "Medizinische Gase", 15, 20, 100, "Notaufnahme", "Einheiten"),
+            ("Infusionslösungen", "Versorgung", 45, 30, 200, "Intensivstation", "Einheiten"),
+            ("OP-Masken", "PSA", 120, 50, 500, "Chirurgie", "Boxen"),
+            ("Beatmungsfilter", "Ausrüstung", 8, 10, 50, "Intensivstation", "Einheiten"),
         ]
         for item in inventory_items:
             cursor.execute("""
@@ -321,9 +321,9 @@ class HospitalDB:
         
         # Seed device maintenance
         devices = [
-            ("V-203", "Ventilator", "ICU", "high", "2024-01-15", "2024-02-15", 3200, "operational"),
-            ("M-501", "Monitor", "ER", "medium", "2024-01-20", "2024-03-20", 2400, "operational"),
-            ("D-102", "Defibrillator", "Cardiology", "low", "2024-02-01", "2024-05-01", 1800, "operational"),
+            ("V-203", "Beatmungsgerät", "Intensivstation", "hoch", "2024-01-15", "2024-02-15", 3200, "in_betrieb"),
+            ("M-501", "Monitor", "Notaufnahme", "mittel", "2024-01-20", "2024-03-20", 2400, "in_betrieb"),
+            ("D-102", "Defibrillator", "Kardiologie", "niedrig", "2024-02-01", "2024-05-01", 1800, "in_betrieb"),
         ]
         for device in devices:
             cursor.execute("""
