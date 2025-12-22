@@ -481,7 +481,7 @@ page_timestamp = datetime.now().strftime('%H:%M:%S')
 st.markdown(f"""
 <div class="page-header">
     <h1 class="page-title">{page}</h1>
-    <p class="page-subtitle">Last updated: {page_timestamp}</p>
+    <p class="page-subtitle">Zuletzt aktualisiert: {page_timestamp}</p>
 </div>
 """, unsafe_allow_html=True)
 
@@ -766,7 +766,7 @@ if page == "Dashboard":
     
     with col2:
         # Next 15 min outlook panel
-        st.markdown("### Next 15 Min Outlook")
+        st.markdown("### Ausblick: Nächste 15 Minuten")
         st.markdown("")  # Spacing
         
         # Get top 3 predicted bottlenecks
@@ -805,7 +805,7 @@ if page == "Dashboard":
     st.markdown("---")
     
     # Recent alerts
-    st.markdown("### Recent Alerts")
+    st.markdown("### Kürzliche Warnungen")
     st.markdown("")  # Spacing
     if alerts:
         for alert in alerts[:5]:
@@ -827,11 +827,11 @@ if page == "Dashboard":
             </div>
             """, unsafe_allow_html=True)
     else:
-        st.info("No active alerts")
+        st.info("Keine aktiven Warnungen")
     
-    # Pending recommendations
-    st.markdown("### Pending Recommendations")
-    st.markdown("")  # Spacing
+    # Ausstehende Empfehlungen
+    st.markdown("### Ausstehende Empfehlungen")
+    st.markdown("")  # Abstand
     if recommendations:
         for rec in recommendations[:3]:
             priority_color = get_priority_color(rec['priority'])
@@ -853,11 +853,11 @@ if page == "Dashboard":
             </div>
             """, unsafe_allow_html=True)
     else:
-        st.markdown(render_empty_state("✅", "No pending recommendations", "All recommendations have been reviewed"), unsafe_allow_html=True)
+        st.markdown(render_empty_state("✅", "Keine ausstehenden Empfehlungen", "Alle Empfehlungen wurden überprüft"), unsafe_allow_html=True)
 
 elif page == "Operations":
     # Operations page with tabs
-    tab1, tab2, tab3 = st.tabs(["🚨 Alerts", "💡 Recommendations", "📝 Audit"])
+    tab1, tab2, tab3 = st.tabs(["🚨 Warnungen", "💡 Empfehlungen", "📝 Protokoll"])
     
     # Alerts Tab
     with tab1:
@@ -871,7 +871,7 @@ elif page == "Operations":
             # Area dropdown
             all_alerts = db.get_alerts_by_time_range(24)
             areas = ["All"] + sorted(list(set([a.get('department', 'N/A') for a in all_alerts if a.get('department')])))
-            selected_area = st.selectbox("Area", areas, key="ops_alert_area")
+            selected_area = st.selectbox("Bereich", areas, key="ops_alert_area")
         
         with col2:
             # Severity chips
@@ -1330,8 +1330,8 @@ elif page == "Alerts":
         st.markdown("""
         <div class="empty-state">
             <div class="empty-state-icon">✅</div>
-            <div class="empty-state-title">No critical alerts right now</div>
-            <div class="empty-state-text">All systems operating normally</div>
+            <div class="empty-state-title">Zurzeit keine kritischen Warnungen</div>
+            <div class="empty-state-text">Alle Systeme arbeiten normal</div>
         </div>
         """, unsafe_allow_html=True)
 
