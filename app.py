@@ -392,19 +392,19 @@ def render_empty_state(icon: str, title: str, text: str):
 # Navigation with icons
 PAGES = {
     "📊 Dashboard": "dashboard",
-    "📈 Live Metrics": "metrics",
-    "🔮 Predictions": "predictions",
-    "⚙️ Operations": "operations",
-    "🚨 Alerts": "alerts",
-    "💡 Recommendations": "recommendations",
+    "📈 Live-Metriken": "metrics",
+    "🔮 Vorhersagen": "predictions",
+    "⚙️ Betrieb": "operations",
+    "🚨 Warnungen": "alerts",
+    "💡 Empfehlungen": "recommendations",
     "🚑 Transport": "transport",
-    "📦 Inventory": "inventory",
-    "🔧 Device Maintenance": "devices",
-    "🏥 Discharge Planning": "discharge",
-    "🚪 Discharge": "discharge_tracker",
-    "📋 Capacity Overview": "capacity",
-    "📝 Audit Log": "audit",
-    "💼 Assets": "assets"
+    "📦 Inventar": "inventory",
+    "🔧 Gerätewartung": "devices",
+    "🏥 Entlassungsplanung": "discharge",
+    "🚪 Entlassung": "discharge_tracker",
+    "📋 Kapazitätsübersicht": "capacity",
+    "📝 Prüfprotokoll": "audit",
+    "💼 Vermögenswerte": "assets"
 }
 
 # Get system status
