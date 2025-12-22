@@ -1,6 +1,6 @@
 """
-Simulation engine for HospitalFlow
-Provides correlated signals, events, and realistic behavior
+Simulations-Engine für HospitalFlow
+Stellt korrelierte Signale, Ereignisse und realistisches Verhalten bereit
 """
 import random
 from datetime import datetime, timedelta
@@ -34,7 +34,7 @@ class HospitalSimulation:
         self.last_update = datetime.now()
     
     def update(self, minutes_passed: int = 1):
-        """Update simulation state based on time passed"""
+        """Simulationsstatus basierend auf vergangener Zeit aktualisieren"""
         now = datetime.now()
         
         # Remove expired events
@@ -72,7 +72,7 @@ class HospitalSimulation:
         self.last_update = now
     
     def _update_trends(self):
-        """Update trend directions based on current state"""
+        """Trendrichtungen basierend auf aktuellem Zustand aktualisieren"""
         # ED load trend: tends to drift toward 70% if no intervention
         if self.state['ed_load'] < 70:
             self.trends['ed_load'] = min(0.3, self.trends['ed_load'] + 0.05)
@@ -84,7 +84,7 @@ class HospitalSimulation:
         self.trends['ed_load'] = max(-1.0, min(1.0, self.trends['ed_load']))
     
     def _apply_correlations(self):
-        """Apply correlated signals"""
+        """Korrigierte Signale anwenden"""
         # When ED load rises, waiting_count tends to rise
         if self.state['ed_load'] > 75:
             self.state['waiting_count'] += random.uniform(0.5, 1.5) * (self.state['ed_load'] - 75) / 25
@@ -112,7 +112,7 @@ class HospitalSimulation:
             self.state['rooms_free'] = max(0, self.state['rooms_free'] - random.uniform(0.1, 0.3))
     
     def _apply_events(self):
-        """Apply active surge events"""
+        """Aktive Auslastungsereignisse anwenden"""
         for event in self.active_events:
             intensity = event['intensity']
             elapsed = (datetime.now() - event['start_time']).total_seconds() / 60
@@ -127,7 +127,7 @@ class HospitalSimulation:
                 self.state['staff_load'] = min(100, self.state['staff_load'] + intensity * decay * 10)
     
     def _apply_recommendation_effects(self):
-        """Apply effects from accepted recommendations"""
+        """Effekte aus akzeptierten Empfehlungen anwenden"""
         for effect_name, effect in self.recommendation_effects.items():
             elapsed = (datetime.now() - effect['start_time']).total_seconds() / 60
             remaining = max(0, effect['duration_minutes'] - elapsed)
@@ -152,7 +152,7 @@ class HospitalSimulation:
                     self.state['rooms_free'] += strength * 2
     
     def _add_natural_variation(self):
-        """Add natural random variation to all metrics"""
+        """Natürliche zufällige Variation zu allen Metriken hinzufügen"""
         self.state['ed_load'] += random.uniform(-2, 2)
         self.state['waiting_count'] += random.uniform(-0.5, 0.5)
         self.state['beds_free'] += random.uniform(-0.3, 0.3)
@@ -162,7 +162,7 @@ class HospitalSimulation:
         self.state['transport_queue'] += random.uniform(-0.2, 0.2)
     
     def _enforce_bounds(self):
-        """Ensure all metrics stay within valid bounds"""
+        """Sicherstellen, dass alle Metriken innerhalb gültiger Grenzen bleiben"""
         self.state['ed_load'] = max(0, min(100, self.state['ed_load']))
         self.state['waiting_count'] = max(0, int(self.state['waiting_count']))
         self.state['beds_free'] = max(0, int(self.state['beds_free']))
@@ -173,7 +173,7 @@ class HospitalSimulation:
         self.state['inventory_risk_count'] = max(0, int(self.state['inventory_risk_count']))
     
     def trigger_surge_event(self, intensity: float = 1.0, duration_minutes: int = None):
-        """Trigger a surge event"""
+        """Auslastungsereignis auslösen"""
         if duration_minutes is None:
             duration_minutes = random.randint(10, 20)
         
@@ -187,14 +187,14 @@ class HospitalSimulation:
         return event
     
     def apply_discharge_event(self, count: int = 1):
-        """Simulate discharge events (increases beds free)"""
+        """Entlassungsereignisse simulieren (erhöht freie Betten)"""
         self.state['beds_free'] += count
         # Discharges reduce ED load slightly (patients leaving)
         self.state['ed_load'] = max(0, self.state['ed_load'] - count * 2)
         self._enforce_bounds()
     
     def apply_recommendation_effect(self, rec_type: str, effect_name: str, duration_minutes: int = 30):
-        """Apply effect from accepted recommendation"""
+        """Effekt aus akzeptierter Empfehlung anwenden"""
         self.recommendation_effects[effect_name] = {
             'start_time': datetime.now(),
             'duration_minutes': duration_minutes,
@@ -202,12 +202,12 @@ class HospitalSimulation:
         }
     
     def get_current_metrics(self) -> Dict:
-        """Get current simulation state"""
+        """Aktuellen Simulationsstatus abrufen"""
         self.update()
         return self.state.copy()
     
     def get_metric_history(self, metric_name: str, minutes: int = 60) -> List[Dict]:
-        """Get historical values for a metric (simulated)"""
+        """Historische Werte für eine Metrik (simuliert) abrufen"""
         # For MVP, generate realistic historical data based on current state
         history = []
         now = datetime.now()
@@ -235,7 +235,7 @@ class HospitalSimulation:
         return history
     
     def should_trigger_surge(self, demo_mode: bool = False) -> bool:
-        """Determine if a surge event should be triggered (random chance)"""
+        """Bestimmen, ob ein Auslastungsereignis ausgelöst werden soll (Zufall)"""
         # 5% chance per update cycle, 20% in demo mode
         chance = 0.20 if demo_mode else 0.05
         return random.random() < chance
@@ -246,7 +246,7 @@ _simulation_instance: Optional[HospitalSimulation] = None
 
 
 def get_simulation() -> HospitalSimulation:
-    """Get or create the global simulation instance"""
+    """Globale Simulationsinstanz abrufen oder erstellen"""
     global _simulation_instance
     if _simulation_instance is None:
         _simulation_instance = HospitalSimulation()
@@ -254,7 +254,7 @@ def get_simulation() -> HospitalSimulation:
 
 
 def reset_simulation():
-    """Reset the simulation (useful for testing)"""
+    """Simulation zurücksetzen (nützlich für Tests)"""
     global _simulation_instance
     _simulation_instance = None
 

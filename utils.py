@@ -26,7 +26,7 @@ def format_time_ago(timestamp: str) -> str:
                 dt = datetime.strptime(timestamp, '%Y-%m-%d %H:%M:%S')
             except:
                 # Fallback to current time if parsing fails
-                return "recently"
+                return "kürzlich"
     else:
         dt = timestamp
     
@@ -34,16 +34,16 @@ def format_time_ago(timestamp: str) -> str:
     diff = now - dt
     
     if diff.total_seconds() < 60:
-        return "just now"
+        return "gerade eben"
     elif diff.total_seconds() < 3600:
         mins = int(diff.total_seconds() / 60)
-        return f"{mins}m ago"
+        return f"vor {mins} Min."
     elif diff.total_seconds() < 86400:
         hours = int(diff.total_seconds() / 3600)
-        return f"{hours}h ago"
+        return f"vor {hours} Std."
     else:
         days = int(diff.total_seconds() / 86400)
-        return f"{days}d ago"
+        return f"vor {days} Tg."
 
 
 def get_severity_color(severity: str) -> str:
@@ -189,44 +189,44 @@ def calculate_metric_severity(value: float, thresholds: dict) -> tuple[str, str]
     thresholds: {'critical': max, 'watch': max, 'stable': max}
     """
     if value >= thresholds.get('critical', 90):
-        return 'high', 'Critical'
+        return 'high', 'Kritisch'
     elif value >= thresholds.get('watch', 70):
-        return 'medium', 'Watch'
+        return 'medium', 'Beobachten'
     else:
-        return 'low', 'Stable'
+        return 'low', 'Stabil'
 
 
 def get_metric_severity_for_load(load_percent: float) -> tuple[str, str]:
     """Get severity for load-based metrics (0-100%)"""
     if load_percent >= 90:
-        return 'high', 'Critical'
+        return 'high', 'Kritisch'
     elif load_percent >= 75:
-        return 'medium', 'Watch'
+        return 'medium', 'Beobachten'
     else:
-        return 'low', 'Stable'
+        return 'low', 'Stabil'
 
 
 def get_metric_severity_for_count(count: int, thresholds: dict) -> tuple[str, str]:
     """Get severity for count-based metrics"""
     if count >= thresholds.get('critical', 20):
-        return 'high', 'Critical'
+        return 'high', 'Kritisch'
     elif count >= thresholds.get('watch', 10):
-        return 'medium', 'Watch'
+        return 'medium', 'Beobachten'
     else:
-        return 'low', 'Stable'
+        return 'low', 'Stabil'
 
 
 def get_metric_severity_for_free(free: int, total: int) -> tuple[str, str]:
     """Get severity for free/available metrics (lower is worse)"""
     if total == 0:
-        return 'high', 'Critical'
+        return 'high', 'Kritisch'
     free_percent = (free / total) * 100
     if free_percent <= 5:
-        return 'high', 'Critical'
+        return 'high', 'Kritisch'
     elif free_percent <= 15:
-        return 'medium', 'Watch'
+        return 'medium', 'Beobachten'
     else:
-        return 'low', 'Stable'
+        return 'low', 'Stabil'
 
 
 def calculate_explanation_score(trend_strength: float, data_points: int, confidence: float) -> str:
