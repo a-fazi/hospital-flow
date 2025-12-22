@@ -800,7 +800,7 @@ if page == "Dashboard":
                 </div>
                 """, unsafe_allow_html=True)
         else:
-            st.markdown(render_empty_state("📊", "No predicted bottlenecks", "System operating within normal parameters"), unsafe_allow_html=True)
+            st.markdown(render_empty_state("📊", "Keine vorhergesagten Engpässe", "System arbeitet im normalen Bereich"), unsafe_allow_html=True)
     
     st.markdown("---")
     
@@ -855,45 +855,45 @@ if page == "Dashboard":
     else:
         st.markdown(render_empty_state("✅", "Keine ausstehenden Empfehlungen", "Alle Empfehlungen wurden überprüft"), unsafe_allow_html=True)
 
-elif page == "Operations":
+elif page == "Betrieb":
     # Operations page with tabs
     tab1, tab2, tab3 = st.tabs(["🚨 Warnungen", "💡 Empfehlungen", "📝 Protokoll"])
     
     # Alerts Tab
     with tab1:
-        st.markdown("### Alerts")
+        st.markdown("### Warnungen")
         st.markdown("")  # Spacing
         
         # Filter row
         col1, col2, col3 = st.columns([2, 2, 2])
         
         with col1:
-            # Area dropdown
+            # Bereich Dropdown
             all_alerts = db.get_alerts_by_time_range(24)
-            areas = ["All"] + sorted(list(set([a.get('department', 'N/A') for a in all_alerts if a.get('department')])))
+            areas = ["Alle"] + sorted(list(set([a.get('department', 'N/A') for a in all_alerts if a.get('department')])))
             selected_area = st.selectbox("Bereich", areas, key="ops_alert_area")
         
         with col2:
             # Severity chips
-            severity_options = ["All", "high", "medium", "low"]
+            severity_options = ["Alle", "hoch", "mittel", "niedrig"]
             selected_severities = st.multiselect(
-                "Severity",
+                "Schweregrad",
                 severity_options,
-                default=["high", "medium"],
+                default=["hoch", "mittel"],
                 key="ops_alert_severity"
             )
             if not selected_severities:
                 selected_severities = severity_options
         
         with col3:
-            # Time range
+            # Zeitspanne
             time_range = st.selectbox(
-                "Time Range",
-                ["Last 1 hour", "Last 6 hours", "Last 24 hours"],
+                "Zeitraum",
+                ["Letzte 1 Stunde", "Letzte 6 Stunden", "Letzte 24 Stunden"],
                 index=2,
                 key="ops_alert_time"
             )
-            hours_map = {"Last 1 hour": 1, "Last 6 hours": 6, "Last 24 hours": 24}
+            hours_map = {"Letzte 1 Stunde": 1, "Letzte 6 Stunden": 6, "Letzte 24 Stunden": 24}
             hours = hours_map[time_range]
         
         st.markdown("")  # Spacing
@@ -903,9 +903,9 @@ elif page == "Operations":
         
         # Apply filters
         filtered_alerts = alerts
-        if selected_area != "All":
+        if selected_area != "Alle":
             filtered_alerts = [a for a in filtered_alerts if a.get('department') == selected_area]
-        if "All" not in selected_severities:
+        if "Alle" not in selected_severities:
             filtered_alerts = [a for a in filtered_alerts if a['severity'] in selected_severities]
         
         # Display alerts as compact cards
@@ -924,7 +924,7 @@ elif page == "Operations":
                 
                 col1, col2 = st.columns([5, 1])
                 with col1:
-                    pred_text = f" • Predicted: {predicted_minutes} min" if predicted_minutes else ""
+                    pred_text = f" • Prognose: {predicted_minutes} Min." if predicted_minutes else ""
                     st.markdown(f"""
                     <div style="background: white; padding: 1rem; border-radius: 8px; margin-bottom: 0.75rem; border-left: 4px solid {severity_color}; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
                         <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
@@ -940,28 +940,28 @@ elif page == "Operations":
                     </div>
                     """, unsafe_allow_html=True)
                 with col2:
-                    if st.button("Acknowledge", key=f"ops_ack_{alert['id']}", use_container_width=True):
+                    if st.button("Bestätigen", key=f"ops_ack_{alert['id']}", use_container_width=True):
                         db.acknowledge_alert(alert['id'])
-                        st.success("✅ Alert acknowledged")
+                        st.success("✅ Warnung bestätigt")
                         st.rerun()
         else:
             st.markdown("""
             <div class="empty-state">
                 <div class="empty-state-icon">🔍</div>
-                <div class="empty-state-title">No alerts found</div>
-                <div class="empty-state-text">No alerts match the selected filters</div>
+                <div class="empty-state-title">Keine Warnungen gefunden</div>
+                <div class="empty-state-text">Keine Warnungen entsprechen den ausgewählten Filtern</div>
             </div>
             """, unsafe_allow_html=True)
     
     # Recommendations Tab
     with tab2:
-        st.markdown("### Recommendations")
-        st.markdown("")  # Spacing
+        st.markdown("### Empfehlungen")
+        st.markdown("")  # Abstand
         
-        # Role selector pinned at top
+        # Rollen-Auswahl oben angeheftet
         selected_role = st.radio(
-            "Role",
-            ["All", "Nurse", "Doctor", "Manager"],
+            "Rolle",
+            ["Alle", "Pflegekraft", "Arzt/Ärztin", "Leitung"],
             horizontal=True,
             key="ops_rec_role"
         )
@@ -972,7 +972,7 @@ elif page == "Operations":
         recommendations = db.get_pending_recommendations()
         
         # Filter by role (in real app, this would filter by actual role field)
-        if selected_role != "All":
+        if selected_role != "Alle":
             # For MVP, we'll show all but could filter by rec_type or department
             pass
         
@@ -984,14 +984,22 @@ elif page == "Operations":
                 # Get explanation score
                 explanation_score = rec.get('explanation_score', 'medium')
                 score_color = get_explanation_score_color(explanation_score)
-                score_badge = render_badge(f"Confidence: {explanation_score.upper()}", explanation_score if explanation_score != 'low' else 'medium')
+                score_badge = render_badge(f"Vertrauen: {explanation_score.upper()}", explanation_score if explanation_score != 'low' else 'medium')
                 
                 # Impact tags (extract from department and rec_type)
                 impact_tags = []
                 if rec.get('department'):
                     impact_tags.append(rec['department'])
                 if rec.get('rec_type'):
-                    impact_tags.append(rec['rec_type'].replace('_', ' ').title())
+                    # Translate common rec_types to German
+                    rec_type_map = {
+                        'capacity': 'Kapazität',
+                        'staffing': 'Personal',
+                        'inventory': 'Inventar',
+                        'general': 'Allgemein',
+                    }
+                    rec_type = rec['rec_type']
+                    impact_tags.append(rec_type_map.get(rec_type, rec_type.replace('_', ' ').title()))
                 
                 # Use new template format if available, otherwise fall back to old format
                 has_new_format = rec.get('action') and rec.get('reason')
@@ -1011,19 +1019,19 @@ elif page == "Operations":
                         
                         <div style="background: #f9fafb; padding: 1rem; border-radius: 6px; margin-bottom: 0.75rem;">
                             <div style="margin-bottom: 0.75rem;">
-                                <strong style="color: #1f2937; font-size: 0.875rem;">Action:</strong>
+                                <strong style="color: #1f2937; font-size: 0.875rem;">Maßnahme:</strong>
                                 <p style="margin: 0.25rem 0 0 0; color: #4b5563; line-height: 1.6;">{rec.get('action', 'N/A')}</p>
                             </div>
                             <div style="margin-bottom: 0.75rem;">
-                                <strong style="color: #1f2937; font-size: 0.875rem;">Reason:</strong>
+                                <strong style="color: #1f2937; font-size: 0.875rem;">Begründung:</strong>
                                 <p style="margin: 0.25rem 0 0 0; color: #4b5563; line-height: 1.6;">{rec.get('reason', 'N/A')}</p>
                             </div>
                             <div style="margin-bottom: 0.75rem;">
-                                <strong style="color: #1f2937; font-size: 0.875rem;">Expected impact:</strong>
+                                <strong style="color: #1f2937; font-size: 0.875rem;">Erwartete Auswirkung:</strong>
                                 <p style="margin: 0.25rem 0 0 0; color: #4b5563; line-height: 1.6;">{rec.get('expected_impact', 'N/A')}</p>
                             </div>
                             <div>
-                                <strong style="color: #1f2937; font-size: 0.875rem;">Safety note:</strong>
+                                <strong style="color: #1f2937; font-size: 0.875rem;">Sicherheits-Hinweis:</strong>
                                 <p style="margin: 0.25rem 0 0 0; color: #4b5563; line-height: 1.6;">{rec.get('safety_note', 'N/A')}</p>
                             </div>
                         </div>
@@ -1051,22 +1059,22 @@ elif page == "Operations":
                     """, unsafe_allow_html=True)
                 
                 # Expandable "Why suggested?" section
-                with st.expander("Why suggested?", expanded=False):
+                with st.expander("Warum vorgeschlagen?", expanded=False):
                     if has_new_format:
                         # Use the reason and expected_impact from the template
                         explanation = f"""
-                        <strong>Reason:</strong> {rec.get('reason', 'N/A')}<br><br>
-                        <strong>Expected Impact:</strong> {rec.get('expected_impact', 'N/A')}<br><br>
-                        <strong>Confidence Level:</strong> {explanation_score.upper()} (based on trend strength and data quality)
+                        <strong>Begründung:</strong> {rec.get('reason', 'N/A')}<br><br>
+                        <strong>Erwartete Auswirkung:</strong> {rec.get('expected_impact', 'N/A')}<br><br>
+                        <strong>Vertrauensniveau:</strong> {explanation_score.upper()} (basiert auf Trendstärke und Datenqualität)
                         """
                     else:
                         # Generate explanation based on rec_type
                         rec_type = rec.get('rec_type', 'general')
                         explanations = {
-                            'capacity': f"Current capacity utilization in {rec.get('department', 'this area')} is above threshold. Historical data suggests opening overflow beds reduces wait times by 15-20%.",
-                            'staffing': f"Staff load analysis shows {rec.get('department', 'this area')} is experiencing increased demand. Reallocation can improve response times.",
-                            'inventory': f"Inventory levels for critical supplies in {rec.get('department', 'this area')} are below optimal. Reorder now to prevent stockout.",
-                            'general': f"AI analysis of current metrics and trends in {rec.get('department', 'this area')} suggests this action to optimize operations."
+                            'capacity': f"Die aktuelle Kapazitätsauslastung in {rec.get('department', 'diesem Bereich')} liegt über dem Schwellenwert. Historische Daten zeigen, dass das Öffnen von Überlaufbetten die Wartezeiten um 15-20% reduziert.",
+                            'staffing': f"Die Analyse der Personalauslastung zeigt, dass {rec.get('department', 'dieser Bereich')} eine erhöhte Nachfrage erfährt. Eine Umverteilung kann die Reaktionszeiten verbessern.",
+                            'inventory': f"Die Bestände kritischer Materialien in {rec.get('department', 'diesem Bereich')} liegen unter dem Optimum. Jetzt nachbestellen, um Engpässe zu vermeiden.",
+                            'general': f"Die KI-Analyse der aktuellen Kennzahlen und Trends in {rec.get('department', 'diesem Bereich')} empfiehlt diese Maßnahme zur Optimierung des Betriebs."
                         }
                         explanation = explanations.get(rec_type, explanations['general'])
                     
@@ -1080,14 +1088,14 @@ elif page == "Operations":
                 col1, col2 = st.columns([3, 1])
                 with col1:
                     action_text = st.text_input(
-                        "Action / Reason",
+                        "Maßnahme / Begründung",
                         key=f"ops_action_{rec['id']}",
-                        placeholder="Enter action taken or rejection reason"
+                        placeholder="Bitte ergreifende Maßnahme oder Ablehnungsgrund eingeben"
                     )
                 with col2:
                     col_accept, col_reject = st.columns(2)
                     with col_accept:
-                        accept_clicked = st.button("✅ Accept", key=f"ops_accept_{rec['id']}", use_container_width=True, type="primary")
+                        accept_clicked = st.button("✅ Annehmen", key=f"ops_accept_{rec['id']}", use_container_width=True, type="primary")
                         if accept_clicked:
                             if action_text:
                                 db.accept_recommendation(rec['id'], action_text)
@@ -1099,53 +1107,53 @@ elif page == "Operations":
                                     sim.apply_recommendation_effect(rec_type, 'open_overflow_beds', duration_minutes=45)
                                 elif 'room' in rec_type.lower() or 'room' in rec.get('action', '').lower():
                                     sim.apply_recommendation_effect(rec_type, 'room_allocation', duration_minutes=30)
-                                st.success("✅ Recommendation accepted")
+                                st.success("✅ Empfehlung angenommen")
                                 st.rerun()
                             else:
-                                st.warning("⚠️ Please enter action taken")
+                                st.warning("⚠️ Bitte Maßnahme eingeben")
                     with col_reject:
-                        reject_clicked = st.button("❌ Reject", key=f"ops_reject_{rec['id']}", use_container_width=True)
+                        reject_clicked = st.button("❌ Ablehnen", key=f"ops_reject_{rec['id']}", use_container_width=True)
                         if reject_clicked:
                             if action_text:
                                 db.reject_recommendation(rec['id'], action_text)
-                                st.info("❌ Recommendation rejected")
+                                st.info("❌ Empfehlung abgelehnt")
                                 st.rerun()
                             else:
-                                st.warning("⚠️ Please enter rejection reason")
+                                st.warning("⚠️ Bitte Ablehnungsgrund eingeben")
                 
                 st.markdown("---")
         else:
             st.markdown("""
             <div class="empty-state">
                 <div class="empty-state-icon">✅</div>
-                <div class="empty-state-title">No pending recommendations</div>
-                <div class="empty-state-text">All recommendations have been reviewed</div>
+                <div class="empty-state-title">Keine ausstehenden Empfehlungen</div>
+                <div class="empty-state-text">Alle Empfehlungen wurden überprüft</div>
             </div>
             """, unsafe_allow_html=True)
     
     # Audit Tab
     with tab3:
-        st.markdown("### Audit Log")
-        st.markdown("")  # Spacing
-        
-        # Filters
+        st.markdown("### Prüfprotokoll")
+        st.markdown("")  # Abstand
+
+        # Filter
         audit_log = db.get_audit_log(100)
-        
+
         col1, col2, col3 = st.columns(3)
-        
+
         with col1:
-            roles = ["All"] + sorted(list(set([a.get('user_role', 'system') for a in audit_log if a.get('user_role')])))
-            selected_role_audit = st.selectbox("Role", roles, key="ops_audit_role")
-        
+            roles = ["Alle"] + sorted(list(set([a.get('user_role', 'system') for a in audit_log if a.get('user_role')])))
+            selected_role_audit = st.selectbox("Rolle", roles, key="ops_audit_role")
+
         with col2:
-            actions = ["All"] + sorted(list(set([a.get('action_type', '') for a in audit_log if a.get('action_type')])))
-            selected_action = st.selectbox("Action", actions, key="ops_audit_action")
-        
+            actions = ["Alle"] + sorted(list(set([a.get('action_type', '') for a in audit_log if a.get('action_type')])))
+            selected_action = st.selectbox("Aktion", actions, key="ops_audit_action")
+
         with col3:
-            areas = ["All"] + sorted(list(set([a.get('entity_type', '') for a in audit_log if a.get('entity_type')])))
-            selected_area_audit = st.selectbox("Area", areas, key="ops_audit_area")
-        
-        st.markdown("")  # Spacing
+            areas = ["Alle"] + sorted(list(set([a.get('entity_type', '') for a in audit_log if a.get('entity_type')])))
+            selected_area_audit = st.selectbox("Bereich", areas, key="ops_audit_area")
+
+        st.markdown("")  # Abstand
         
         # Apply filters
         filtered_audit = audit_log
@@ -1158,14 +1166,14 @@ elif page == "Operations":
         
         # Display as table
         if filtered_audit:
-            # Prepare data for table
+            # Tabelle mit deutschen Spaltenüberschriften vorbereiten
             table_data = []
             for entry in filtered_audit:
                 table_data.append({
-                    "Time": format_time_ago(entry['timestamp']),
-                    "Role": entry.get('user_role', 'system').title(),
-                    "Action": entry['action_type'].replace('_', ' ').title(),
-                    "Area": entry.get('entity_type', 'N/A'),
+                    "Zeit": format_time_ago(entry['timestamp']),
+                    "Rolle": entry.get('user_role', 'system').title(),
+                    "Aktion": entry['action_type'].replace('_', ' ').title(),
+                    "Bereich": entry.get('entity_type', 'N/A'),
                     "Details": entry.get('details', '')[:50] + "..." if entry.get('details') and len(entry.get('details', '')) > 50 else entry.get('details', '')
                 })
             
@@ -1176,17 +1184,18 @@ elif page == "Operations":
                 hide_index=True,
                 height=400
             )
-        else:
-            st.info("No audit log entries found")
 
-elif page == "Live Metrics":
-    st.markdown("### Real-time Metrics")
+        else:
+            st.info("Keine Protokolleinträge gefunden")
+
+elif page == "Live-Metriken":
+    st.markdown("### Live-Metriken")
     
     metrics = db.get_recent_metrics(20)
     if metrics:
         df = pd.DataFrame(metrics)
         
-        # Group by metric type
+        # Gruppieren nach Metrik-Typ
         metric_types = df['metric_type'].unique()
         
         cols = st.columns(3)
@@ -1202,9 +1211,9 @@ elif page == "Live Metrics":
         
         # Time series chart
         st.markdown("---")
-        st.markdown("### Metric Trends")
+        st.markdown("### Metrik-Trends")
         
-        selected_metric = st.selectbox("Select metric type", metric_types, key="metric_select")
+        selected_metric = st.selectbox("Metrik-Typ auswählen", metric_types, key="metric_select")
         metric_data = df[df['metric_type'] == selected_metric].sort_values('timestamp')
         
         if not metric_data.empty:
@@ -1213,29 +1222,29 @@ elif page == "Live Metrics":
                 x='timestamp',
                 y='value',
                 color='department',
-                title=f"{selected_metric.replace('_', ' ').title()} Over Time",
+                title=f"{selected_metric.replace('_', ' ').title()} Verlauf",
                 markers=True
             )
             fig.update_layout(
                 height=400,
-                xaxis_title="Time",
-                yaxis_title="Value",
+                xaxis_title="Zeit",
+                yaxis_title="Wert",
                 plot_bgcolor='rgba(0,0,0,0)',
                 paper_bgcolor='rgba(0,0,0,0)'
             )
             st.plotly_chart(fig, use_container_width=True)
     else:
-        st.info("No metrics available")
+        st.info("Keine Metriken verfügbar")
 
-elif page == "Predictions":
-    st.markdown("### 5-15 Minute Predictions")
+elif page == "Vorhersagen":
+    st.markdown("### 5-15 Minuten Vorhersagen")
     
     predictions = db.get_predictions(15)
     if predictions:
         df = pd.DataFrame(predictions)
         
-        # Group predictions
-        st.markdown("#### Upcoming Predictions")
+        # Vorhersagen gruppieren
+        st.markdown("#### Bevorstehende Vorhersagen")
         for pred in predictions[:10]:
             confidence_color = "#10B981" if pred['confidence'] > 0.8 else "#F59E0B" if pred['confidence'] > 0.7 else "#EF4444"
             st.markdown(f"""
@@ -1244,7 +1253,7 @@ elif page == "Predictions":
                     <div>
                         <strong>{pred['prediction_type'].replace('_', ' ').title()}</strong>
                         <div style="color: #6b7280; font-size: 0.875rem; margin-top: 0.25rem;">
-                            {pred.get('department', 'N/A')} • {pred['time_horizon_minutes']} min ahead
+                            {pred.get('department', 'N/A')} • in {pred['time_horizon_minutes']} Min.
                         </div>
                     </div>
                     <div style="text-align: right;">
@@ -1252,7 +1261,7 @@ elif page == "Predictions":
                             {pred['predicted_value']:.1f}
                         </div>
                         <div style="font-size: 0.75rem; color: {confidence_color};">
-                            {pred['confidence']*100:.0f}% confidence
+                            {pred['confidence']*100:.0f}% Vertrauen
                         </div>
                     </div>
                 </div>
@@ -1261,7 +1270,7 @@ elif page == "Predictions":
         
         # Prediction chart
         st.markdown("---")
-        st.markdown("### Prediction Confidence by Time Horizon")
+        st.markdown("### Prognose-Vertrauen nach Zeithorizont")
         
         if len(df) > 0:
             fig = px.scatter(
@@ -1275,36 +1284,36 @@ elif page == "Predictions":
             )
             fig.update_layout(
                 height=400,
-                xaxis_title="Time Horizon (minutes)",
-                yaxis_title="Confidence",
+                xaxis_title="Zeithorizont (Minuten)",
+                yaxis_title="Vertrauen",
                 plot_bgcolor='rgba(0,0,0,0)',
                 paper_bgcolor='rgba(0,0,0,0)'
             )
             st.plotly_chart(fig, use_container_width=True)
     else:
-        st.markdown(render_empty_state("🔮", "No predictions available", "Predictions will appear here when available"), unsafe_allow_html=True)
+        st.markdown(render_empty_state("🔮", "Keine Vorhersagen verfügbar", "Vorhersagen werden hier angezeigt, sobald sie verfügbar sind"), unsafe_allow_html=True)
 
-elif page == "Alerts":
+elif page == "Warnungen":
     alerts = db.get_active_alerts()
     
     if alerts:
-        # Filter options
-        st.markdown("### Filters")
+        # Filteroptionen
+        st.markdown("### Filter")
         col1, col2 = st.columns(2)
         with col1:
-            severity_filter = st.selectbox("Filter by severity", ["All", "high", "medium", "low"], key="alert_severity")
+            severity_filter = st.selectbox("Nach Schweregrad filtern", ["Alle", "hoch", "mittel", "niedrig"], key="alert_severity")
         with col2:
-            dept_filter = st.selectbox("Filter by department", ["All"] + list(set([a.get('department', 'N/A') for a in alerts])), key="alert_dept")
+            dept_filter = st.selectbox("Nach Bereich filtern", ["Alle"] + list(set([a.get('department', 'N/A') for a in alerts])), key="alert_dept")
         
         filtered_alerts = alerts
-        if severity_filter != "All":
+        if severity_filter != "Alle":
             filtered_alerts = [a for a in filtered_alerts if a['severity'] == severity_filter]
-        if dept_filter != "All":
+        if dept_filter != "Alle":
             filtered_alerts = [a for a in filtered_alerts if a.get('department') == dept_filter]
         
-        st.markdown("")  # Spacing
-        st.markdown("### Active Alerts")
-        st.markdown("")  # Spacing
+        st.markdown("")  # Abstand
+        st.markdown("### Aktive Warnungen")
+        st.markdown("")  # Abstand
         
         for alert in filtered_alerts:
             severity_color = get_severity_color(alert['severity'])
@@ -1323,7 +1332,7 @@ elif page == "Alerts":
                 """, unsafe_allow_html=True)
             
             with col2:
-                if st.button("Acknowledge", key=f"ack_{alert['id']}", use_container_width=True):
+                if st.button("Bestätigen", key=f"ack_{alert['id']}", use_container_width=True):
                     db.acknowledge_alert(alert['id'])
                     st.rerun()
     else:
@@ -1335,10 +1344,10 @@ elif page == "Alerts":
         </div>
         """, unsafe_allow_html=True)
 
-elif page == "Recommendations":
-    st.markdown("### Pending Recommendations")
-    st.markdown("Review and accept or reject AI-generated recommendations")
-    st.markdown("")  # Spacing
+elif page == "Empfehlungen":
+    st.markdown("### Ausstehende Empfehlungen")
+    st.markdown("Überprüfen und Annehmen/Ablehnen von KI-generierten Empfehlungen")
+    st.markdown("")  # Abstand
     
     recommendations = db.get_pending_recommendations()
     
@@ -1350,7 +1359,7 @@ elif page == "Recommendations":
             # Get explanation score
             explanation_score = rec.get('explanation_score', 'medium')
             score_color = get_explanation_score_color(explanation_score)
-            score_badge = render_badge(f"Confidence: {explanation_score.upper()}", explanation_score if explanation_score != 'low' else 'medium')
+            score_badge = render_badge(f"Vertrauen: {explanation_score.upper()}", explanation_score if explanation_score != 'low' else 'medium')
             
             # Use new template format if available, otherwise fall back to old format
             has_new_format = rec.get('action') and rec.get('reason')
@@ -1370,19 +1379,19 @@ elif page == "Recommendations":
                     
                     <div style="background: #f9fafb; padding: 1rem; border-radius: 6px; margin-bottom: 0.75rem;">
                         <div style="margin-bottom: 0.75rem;">
-                            <strong style="color: #1f2937; font-size: 0.875rem;">Action:</strong>
+                            <strong style="color: #1f2937; font-size: 0.875rem;">Maßnahme:</strong>
                             <p style="margin: 0.25rem 0 0 0; color: #4b5563; line-height: 1.6;">{rec.get('action', 'N/A')}</p>
                         </div>
                         <div style="margin-bottom: 0.75rem;">
-                            <strong style="color: #1f2937; font-size: 0.875rem;">Reason:</strong>
+                            <strong style="color: #1f2937; font-size: 0.875rem;">Begründung:</strong>
                             <p style="margin: 0.25rem 0 0 0; color: #4b5563; line-height: 1.6;">{rec.get('reason', 'N/A')}</p>
                         </div>
                         <div style="margin-bottom: 0.75rem;">
-                            <strong style="color: #1f2937; font-size: 0.875rem;">Expected impact:</strong>
+                            <strong style="color: #1f2937; font-size: 0.875rem;">Erwartete Auswirkung:</strong>
                             <p style="margin: 0.25rem 0 0 0; color: #4b5563; line-height: 1.6;">{rec.get('expected_impact', 'N/A')}</p>
                         </div>
                         <div>
-                            <strong style="color: #1f2937; font-size: 0.875rem;">Safety note:</strong>
+                            <strong style="color: #1f2937; font-size: 0.875rem;">Sicherheits-Hinweis:</strong>
                             <p style="margin: 0.25rem 0 0 0; color: #4b5563; line-height: 1.6;">{rec.get('safety_note', 'N/A')}</p>
                         </div>
                     </div>
@@ -1411,11 +1420,11 @@ elif page == "Recommendations":
             
             col1, col2 = st.columns([3, 1])
             with col1:
-                action = st.text_input("Action taken / Reason", key=f"action_{rec['id']}", placeholder="Enter action or rejection reason")
+                action = st.text_input("Maßnahme / Begründung", key=f"action_{rec['id']}", placeholder="Bitte ergreifende Maßnahme oder Ablehnungsgrund eingeben")
             with col2:
                 col_accept, col_reject = st.columns(2)
                 with col_accept:
-                    if st.button("✅ Accept", key=f"accept_{rec['id']}", use_container_width=True, type="primary"):
+                    if st.button("✅ Annehmen", key=f"accept_{rec['id']}", use_container_width=True, type="primary"):
                         if action:
                             db.accept_recommendation(rec['id'], action)
                             # Apply simulation effect based on recommendation type
@@ -1426,22 +1435,22 @@ elif page == "Recommendations":
                                 sim.apply_recommendation_effect(rec_type, 'open_overflow_beds', duration_minutes=45)
                             elif 'room' in rec_type.lower() or 'room' in rec.get('action', '').lower():
                                 sim.apply_recommendation_effect(rec_type, 'room_allocation', duration_minutes=30)
-                            st.success("✅ Recommendation accepted")
+                            st.success("✅ Empfehlung angenommen")
                             st.rerun()
                         else:
-                            st.warning("⚠️ Please enter action taken")
+                            st.warning("⚠️ Bitte Maßnahme eingeben")
                 with col_reject:
-                    if st.button("❌ Reject", key=f"reject_{rec['id']}", use_container_width=True):
+                    if st.button("❌ Ablehnen", key=f"reject_{rec['id']}", use_container_width=True):
                         if action:
                             db.reject_recommendation(rec['id'], action)
-                            st.info("❌ Recommendation rejected")
+                            st.info("❌ Empfehlung abgelehnt")
                             st.rerun()
                         else:
-                            st.warning("⚠️ Please enter rejection reason")
+                            st.warning("⚠️ Bitte Ablehnungsgrund eingeben")
             
             st.markdown("---")
     else:
-        st.markdown(render_empty_state("✅", "No pending recommendations", "All recommendations have been reviewed"), unsafe_allow_html=True)
+        st.markdown(render_empty_state("✅", "Keine ausstehenden Empfehlungen", "Alle Empfehlungen wurden überprüft"), unsafe_allow_html=True)
 
 elif page == "Transport":
     st.markdown("### Transport Requests")
@@ -1449,24 +1458,30 @@ elif page == "Transport":
     transport = db.get_transport_requests()
     
     if transport:
-        status_filter = st.selectbox("Filter by status", ["All", "pending", "in_progress", "completed"], key="transport_status")
-        
+        status_filter = st.selectbox("Nach Status filtern", ["Alle", "Ausstehend", "In Bearbeitung", "Abgeschlossen"], key="transport_status")
+
+        status_map = {
+            "Alle": None,
+            "Ausstehend": "pending",
+            "In Bearbeitung": "in_progress",
+            "Abgeschlossen": "completed"
+        }
         filtered_transport = transport
-        if status_filter != "All":
-            filtered_transport = [t for t in transport if t['status'] == status_filter]
-        
-        # Summary metrics
+        if status_filter != "Alle":
+            filtered_transport = [t for t in transport if t['status'] == status_map[status_filter]]
+
+        # Zusammenfassende Kennzahlen
         col1, col2, col3, col4 = st.columns(4)
         with col1:
-            st.metric("Pending", len([t for t in transport if t['status'] == 'pending']))
+            st.metric("Ausstehend", len([t for t in transport if t['status'] == 'pending']))
         with col2:
-            st.metric("In Progress", len([t for t in transport if t['status'] == 'in_progress']))
+            st.metric("In Bearbeitung", len([t for t in transport if t['status'] == 'in_progress']))
         with col3:
-            st.metric("Completed", len([t for t in transport if t['status'] == 'completed']))
+            st.metric("Abgeschlossen", len([t for t in transport if t['status'] == 'completed']))
         with col4:
             avg_time = sum([t['estimated_time_minutes'] or 0 for t in transport]) / len(transport) if transport else 0
-            st.metric("Avg Est. Time", format_duration_minutes(int(avg_time)))
-        
+            st.metric("Ø geschätzte Zeit", format_duration_minutes(int(avg_time)))
+
         st.markdown("---")
         
         # Transport table
@@ -1483,8 +1498,8 @@ elif page == "Transport":
                         <strong style="margin-left: 0.5rem;">{trans['request_type'].title()}</strong>
                         <div style="color: #6b7280; font-size: 0.875rem; margin-top: 0.25rem;">
                             {trans['from_location']} → {trans['to_location']}
-                            {f"• Est: {format_duration_minutes(trans['estimated_time_minutes'])}" if trans['estimated_time_minutes'] else ""}
-                            {f"• Actual: {format_duration_minutes(trans['actual_time_minutes'])}" if trans['actual_time_minutes'] else ""}
+                            {f"• Geschätzt: {format_duration_minutes(trans['estimated_time_minutes'])}" if trans['estimated_time_minutes'] else ""}
+                            {f"• Tatsächlich: {format_duration_minutes(trans['actual_time_minutes'])}" if trans['actual_time_minutes'] else ""}
                             • {format_time_ago(trans['timestamp'])}
                         </div>
                     </div>
@@ -1492,18 +1507,18 @@ elif page == "Transport":
             </div>
             """, unsafe_allow_html=True)
     else:
-        st.markdown(render_empty_state("🚑", "No transport requests", "No active transport requests at this time"), unsafe_allow_html=True)
+        st.markdown(render_empty_state("🚑", "Keine Transportanfragen", "Zurzeit keine aktiven Transportanfragen"), unsafe_allow_html=True)
 
-elif page == "Inventory":
-    st.markdown("### Inventory Status")
+elif page == "Inventar":
+    st.markdown("### Bestandsübersicht")
     
     inventory = db.get_inventory_status()
     
     if inventory:
-        # Low stock alert
+        # Warnung bei niedrigem Bestand
         low_stock = [i for i in inventory if i['current_stock'] < i['min_threshold']]
         if low_stock:
-            st.warning(f"⚠️ {len(low_stock)} items below threshold")
+            st.warning(f"⚠️ {len(low_stock)} Artikel unter Mindestbestand")
         
         # Inventory cards
         cols = st.columns(3)
@@ -1525,7 +1540,7 @@ elif page == "Inventory":
                         {item['current_stock']} <span style="font-size: 0.875rem; color: #6b7280;">{item['unit']}</span>
                     </div>
                     <div style="font-size: 0.75rem; color: #9ca3af; margin-top: 0.5rem;">
-                        Threshold: {item['min_threshold']} • Capacity: {item['max_capacity']}
+                        Mindestbestand: {item['min_threshold']} • Kapazität: {item['max_capacity']}
                     </div>
                     <div style="margin-top: 0.5rem;">
                         <div style="background: #e5e7eb; height: 4px; border-radius: 2px; overflow: hidden;">
@@ -1537,7 +1552,7 @@ elif page == "Inventory":
         
         # Chart
         st.markdown("---")
-        st.markdown("### Stock Levels")
+        st.markdown("### Bestandsverlauf")
         df_inv = pd.DataFrame(inventory)
         df_inv['utilization'] = (df_inv['current_stock'] / df_inv['max_capacity']) * 100
         
@@ -1546,8 +1561,8 @@ elif page == "Inventory":
             x='item_name',
             y='utilization',
             color='department',
-            title="Inventory Utilization by Item",
-            labels={'utilization': 'Utilization %', 'item_name': 'Item'}
+            title="Bestandsauslastung nach Artikel",
+            labels={'utilization': 'Auslastung %', 'item_name': 'Artikel'}
         )
         fig.update_layout(
             height=400,
@@ -1556,26 +1571,26 @@ elif page == "Inventory":
         )
         st.plotly_chart(fig, use_container_width=True)
     else:
-        st.info("No inventory data")
+        st.info("Keine Bestandsdaten verfügbar")
 
-elif page == "Device Maintenance":
-    st.markdown("### Device Maintenance Risk Assessment")
+elif page == "Gerätewartung":
+    st.markdown("### Gerätewartungs-Risikoanalyse")
     
     devices = db.get_device_maintenance_risks()
     
     if devices:
-        # Risk summary
+        # Risikozusammenfassung
         high_risk = len([d for d in devices if d['risk_level'] == 'high'])
         medium_risk = len([d for d in devices if d['risk_level'] == 'medium'])
-        
+
         col1, col2, col3 = st.columns(3)
         with col1:
-            st.metric("High Risk Devices", high_risk, delta=None)
+            st.metric("Geräte mit hohem Risiko", high_risk, delta=None)
         with col2:
-            st.metric("Medium Risk Devices", medium_risk, delta=None)
+            st.metric("Geräte mit mittlerem Risiko", medium_risk, delta=None)
         with col3:
-            st.metric("Total Devices", len(devices))
-        
+            st.metric("Gesamtanzahl Geräte", len(devices))
+
         st.markdown("---")
         
         # Device cards
@@ -1583,20 +1598,38 @@ elif page == "Device Maintenance":
             risk_color = get_risk_color(device['risk_level'])
             status_color = get_status_color(device['status'])
             
+            # German translation for device card labels
+            risk_label = {
+                'high': 'HOHES RISIKO',
+                'medium': 'MITTLERES RISIKO',
+                'low': 'GERINGES RISIKO'
+            }.get(device['risk_level'], device['risk_level'].upper())
+            status_label = {
+                'active': 'AKTIV',
+                'inactive': 'INAKTIV',
+                'maintenance': 'IN WARTUNG',
+                'pending': 'AUSSTEHEND',
+                'in_use': 'IN BENUTZUNG',
+                'available': 'VERFÜGBAR',
+                'unavailable': 'NICHT VERFÜGBAR',
+                'in_progress': 'IN BEARBEITUNG',
+                'completed': 'ABGESCHLOSSEN'
+            }.get(device['status'], device['status'].upper())
+            
             st.markdown(f"""
             <div style="background: white; padding: 1.5rem; border-radius: 8px; margin-bottom: 1rem; border-left: 4px solid {risk_color};">
                 <div style="display: flex; justify-content: space-between; align-items: start;">
                     <div style="flex: 1;">
                         <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
-                            <span class="badge" style="background: {risk_color}; color: white;">{device['risk_level'].upper()} RISK</span>
-                            <span class="badge" style="background: {status_color}; color: white;">{device['status'].upper()}</span>
+                            <span class="badge" style="background: {risk_color}; color: white;">{risk_label}</span>
+                            <span class="badge" style="background: {status_color}; color: white;">{status_label}</span>
                         </div>
                         <h4 style="margin: 0 0 0.5rem 0;">{device['device_type']} - {device['device_id']}</h4>
                         <div style="color: #6b7280; font-size: 0.875rem;">
-                            <div>Department: {device.get('department', 'N/A')}</div>
-                            <div>Usage: {device['usage_hours']} hours</div>
-                            <div>Last Maintenance: {device['last_maintenance']}</div>
-                            <div>Next Due: {device['next_maintenance_due']}</div>
+                            <div>Abteilung: {device.get('department', 'N/V')}</div>
+                            <div>Nutzungsdauer: {device['usage_hours']} Stunden</div>
+                            <div>Letzte Wartung: {device['last_maintenance']}</div>
+                            <div>Nächste fällig: {device['next_maintenance_due']}</div>
                         </div>
                     </div>
                 </div>
@@ -1605,7 +1638,7 @@ elif page == "Device Maintenance":
         
         # Risk distribution chart
         st.markdown("---")
-        st.markdown("### Risk Distribution")
+        st.markdown("### Risikoverteilung")
         df_dev = pd.DataFrame(devices)
         risk_counts = df_dev['risk_level'].value_counts()
         
@@ -1627,11 +1660,11 @@ elif page == "Device Maintenance":
         )
         st.plotly_chart(fig, use_container_width=True)
     else:
-        st.markdown(render_empty_state("🔧", "No device data", "Device maintenance data will appear here when available"), unsafe_allow_html=True)
+        st.markdown(render_empty_state("🔧", "Keine Gerätedaten verfügbar", "Gerätewartungsdaten werden hier angezeigt, sobald sie verfügbar sind"), unsafe_allow_html=True)
 
-elif page == "Discharge Planning":
-    st.markdown("### Discharge Planning Overview")
-    st.markdown("Aggregated discharge planning metrics by department")
+elif page == "Entlassungsplanung":
+    st.markdown("### Entlassungsplanungs-Übersicht")
+    st.markdown("Aggregierte Entlassungsmetriken nach Abteilung")
     
     discharge = db.get_discharge_planning()
     
@@ -1645,11 +1678,11 @@ elif page == "Discharge Planning":
         
         col1, col2, col3 = st.columns(3)
         with col1:
-            st.metric("Ready for Discharge", total_ready)
+            st.metric("Entlassungsbereit", total_ready)
         with col2:
-            st.metric("Pending Discharge", total_pending)
+            st.metric("Ausstehende Entlassungen", total_pending)
         with col3:
-            st.metric("Avg Length of Stay", f"{avg_los:.1f} hours")
+            st.metric("Ø Verweildauer", f"{avg_los:.1f} Stunden")
         
         st.markdown("---")
         
@@ -1722,7 +1755,7 @@ elif page == "Discharge Planning":
     else:
         st.markdown(render_empty_state("🏥", "No discharge planning data", "Discharge planning data will appear here when available"), unsafe_allow_html=True)
 
-elif page == "Discharge":
+elif page == "Entlassung":
     # Simulate expected discharges data
     now = datetime.now()
     
@@ -1890,7 +1923,7 @@ elif page == "Discharge":
         low_hours = len([d for d in hourly_discharges if d['count'] <= 1])
         st.metric("Low Activity Hours", low_hours, delta=None)
 
-elif page == "Capacity Overview":
+elif page == "Kapazitätsübersicht":
     st.markdown("### Hospital Capacity Overview")
     
     capacity = db.get_capacity_overview()
@@ -1996,7 +2029,7 @@ elif page == "Capacity Overview":
     else:
         st.markdown(render_empty_state("📋", "No capacity data", "Capacity data will appear here when available"), unsafe_allow_html=True)
 
-elif page == "Audit Log":
+elif page == "Prüfprotokoll":
     st.markdown("### Audit Log")
     st.markdown("Track all system actions and changes")
     
@@ -2040,7 +2073,7 @@ elif page == "Audit Log":
     else:
         st.markdown(render_empty_state("📝", "No audit log entries", "Audit log entries will appear here when available"), unsafe_allow_html=True)
 
-elif page == "Assets":
+elif page == "Vermögenswerte":
     # Inventory Risk Section
     st.markdown("### Inventory Risk")
     st.markdown("")  # Spacing
