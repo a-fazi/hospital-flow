@@ -769,13 +769,43 @@ if page == "Dashboard":
         bottleneck_predictions.sort(key=lambda x: x['predicted_value'], reverse=True)
         top_bottlenecks = bottleneck_predictions[:3]
         
+        # German translation for prediction types
+        pred_type_map = {
+            'patient_arrival': 'Patientenzugang',
+            'bed_demand': 'Bettenbedarf',
+            'resource_needed': 'Ressourcenbedarf',
+            'waiting_count': 'Wartende Patienten',
+            'ed_load': 'Notaufnahme-Auslastung',
+            'or_load': 'OP-Auslastung',
+            'staff_load': 'Personal-Auslastung',
+            'transport_queue': 'Transport-Warteschlange',
+            'rooms_free': 'Freie Räume',
+            'beds_free': 'Freie Betten',
+            # Add more as needed
+        }
         if top_bottlenecks:
             for i, bottleneck in enumerate(top_bottlenecks, 1):
-                pred_type = bottleneck['prediction_type'].replace('_', ' ').title()
+                pred_type_key = bottleneck['prediction_type']
+                pred_type = pred_type_map.get(pred_type_key, pred_type_key.replace('_', ' ').title())
                 pred_value = bottleneck['predicted_value']
                 pred_minutes = bottleneck['time_horizon_minutes']
                 dept = bottleneck.get('department', 'N/A')
-                
+                # German translation for department names (add more as needed)
+                dept_map = {
+                    'ED': 'Notaufnahme',
+                    'ICU': 'Intensivstation',
+                    'OR': 'OP',
+                    'Surgery': 'OP',
+                    'Radiology': 'Radiologie',
+                    'Ward': 'Station',
+                    'N/A': 'Bereich',
+                }
+                dept_de = dept_map.get(dept, dept)
+                # German time string
+                if pred_minutes == 1:
+                    time_str = f'in {pred_minutes} Minute'
+                else:
+                    time_str = f'in {pred_minutes} Minuten'
                 st.markdown(f"""
                 <div style="background: white; padding: 1rem; border-radius: 8px; margin-bottom: 0.75rem; border-left: 3px solid #667eea; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
                     <div style="font-size: 0.875rem; font-weight: 600; color: #1f2937; margin-bottom: 0.25rem;">
@@ -785,7 +815,7 @@ if page == "Dashboard":
                         {pred_value:.0f}
                     </div>
                     <div style="font-size: 0.75rem; color: #6b7280; margin-top: 0.5rem;">
-                        {dept} • In {pred_minutes} min
+                        {dept_de} • {time_str}
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
@@ -798,9 +828,11 @@ if page == "Dashboard":
     st.markdown("### Kürzliche Warnungen")
     st.markdown("")  # Abstand
     if alerts:
+        severity_de_map = {'high': 'hoch', 'medium': 'mittel', 'low': 'niedrig'}
         for alert in alerts[:5]:
             severity_color = get_severity_color(alert['severity'])
-            badge_html = render_badge(alert['severity'].upper(), alert['severity'])
+            severity_de = severity_de_map.get(alert['severity'], alert['severity'])
+            badge_html = render_badge(severity_de.upper(), alert['severity'])
             st.markdown(f"""
             <div class="info-card" style="border-left: 4px solid {severity_color};">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -823,9 +855,11 @@ if page == "Dashboard":
     st.markdown("### Ausstehende Empfehlungen")
     st.markdown("")  # Abstand
     if recommendations:
+        priority_de_map = {'high': 'hoch', 'medium': 'mittel', 'low': 'niedrig'}
         for rec in recommendations[:3]:
             priority_color = get_priority_color(rec['priority'])
-            badge_html = render_badge(rec['priority'].upper(), rec['priority'])
+            priority_de = priority_de_map.get(rec['priority'], rec['priority'])
+            badge_html = render_badge(priority_de.upper(), rec['priority'])
             st.markdown(f"""
             <div class="info-card" style="border-left: 4px solid {priority_color};">
                 <div style="display: flex; justify-content: space-between; align-items: start;">
