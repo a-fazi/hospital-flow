@@ -417,7 +417,6 @@ st.sidebar.markdown("""
     <span style="font-size: 2rem;">🏥</span>
     <span style="font-size: 1.5rem; font-weight: 700; color: #4f46e5; letter-spacing: -0.025em;">HospitalFlow</span>
 </div>
-<div style="font-size: 0.875rem; color: #6b7280; margin-bottom: 0.5rem;">Operations Dashboard</div>
 """, unsafe_allow_html=True)
 
 # Demo Mode toggle (in sidebar - below HospitalFlow)
