@@ -582,7 +582,7 @@ if page == "Dashboard":
         surge = active_surges[0]
         elapsed = (datetime.now() - surge['start_time']).total_seconds() / 60
         remaining = max(0, surge['duration_minutes'] - elapsed)
-        st.warning(f"⚠️ **Active Surge Event**: {remaining:.0f} minutes remaining (Intensity: {surge['intensity']:.1f})")
+        st.warning(f"⚠️ **Aktives Auslastungsereignis**: Noch {remaining:.0f} Minuten verbleibend (Intensität: {surge['intensity']:.1f})")
         st.markdown("")  # Spacing
     
     # Live Status Section
@@ -597,7 +597,7 @@ if page == "Dashboard":
         badge_html = render_badge(ed_hint, ed_severity)
         st.markdown(f"""
         <div class="metric-card" style="border-left-color: {severity_color};">
-            <div style="font-size: 0.75rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600; margin-bottom: 0.75rem;">ED Load</div>
+            <div style="font-size: 0.75rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600; margin-bottom: 0.75rem;">Notaufnahme-Auslastung</div>
             <div style="font-size: 2.5rem; font-weight: 700; color: #111827; margin: 0.75rem 0; letter-spacing: -0.02em;">{ed_load:.0f}%</div>
             <div style="margin-top: 1rem;">
                 {badge_html}
@@ -610,7 +610,7 @@ if page == "Dashboard":
         badge_html = render_badge(waiting_hint, waiting_severity)
         st.markdown(f"""
         <div class="metric-card" style="border-left-color: {severity_color};">
-            <div style="font-size: 0.75rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600; margin-bottom: 0.75rem;">Waiting Count</div>
+            <div style="font-size: 0.75rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600; margin-bottom: 0.75rem;">Wartende Patienten</div>
             <div style="font-size: 2.5rem; font-weight: 700; color: #111827; margin: 0.75rem 0; letter-spacing: -0.02em;">{waiting_count}</div>
             <div style="margin-top: 1rem;">
                 {badge_html}
@@ -623,7 +623,7 @@ if page == "Dashboard":
         badge_html = render_badge(beds_hint, beds_severity)
         st.markdown(f"""
         <div class="metric-card" style="border-left-color: {severity_color};">
-            <div style="font-size: 0.75rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600; margin-bottom: 0.75rem;">Beds Free</div>
+            <div style="font-size: 0.75rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600; margin-bottom: 0.75rem;">Freie Betten</div>
             <div style="font-size: 2.5rem; font-weight: 700; color: #111827; margin: 0.75rem 0; letter-spacing: -0.02em;">{beds_free}</div>
             <div style="margin-top: 1rem;">
                 {badge_html}
@@ -636,7 +636,7 @@ if page == "Dashboard":
         badge_html = render_badge(staff_hint, staff_severity)
         st.markdown(f"""
         <div class="metric-card" style="border-left-color: {severity_color};">
-            <div style="font-size: 0.75rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600; margin-bottom: 0.75rem;">Staff Load</div>
+            <div style="font-size: 0.75rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600; margin-bottom: 0.75rem;">Personal-Auslastung</div>
             <div style="font-size: 2.5rem; font-weight: 700; color: #111827; margin: 0.75rem 0; letter-spacing: -0.02em;">{staff_load:.0f}%</div>
             <div style="margin-top: 1rem;">
                 {badge_html}
@@ -652,7 +652,7 @@ if page == "Dashboard":
         badge_html = render_badge(rooms_hint, rooms_severity)
         st.markdown(f"""
         <div class="metric-card" style="border-left-color: {severity_color};">
-            <div style="font-size: 0.75rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600; margin-bottom: 0.75rem;">Rooms Free</div>
+            <div style="font-size: 0.75rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600; margin-bottom: 0.75rem;">Freie Räume</div>
             <div style="font-size: 2.5rem; font-weight: 700; color: #111827; margin: 0.75rem 0; letter-spacing: -0.02em;">{rooms_free}</div>
             <div style="margin-top: 1rem;">
                 {badge_html}
@@ -665,7 +665,7 @@ if page == "Dashboard":
         badge_html = render_badge(or_hint, or_severity)
         st.markdown(f"""
         <div class="metric-card" style="border-left-color: {severity_color};">
-            <div style="font-size: 0.75rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600; margin-bottom: 0.75rem;">OR Load</div>
+            <div style="font-size: 0.75rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600; margin-bottom: 0.75rem;">OP-Auslastung</div>
             <div style="font-size: 2.5rem; font-weight: 700; color: #111827; margin: 0.75rem 0; letter-spacing: -0.02em;">{or_load:.0f}%</div>
             <div style="margin-top: 1rem;">
                 {badge_html}
@@ -678,7 +678,7 @@ if page == "Dashboard":
         badge_html = render_badge(transport_hint, transport_severity)
         st.markdown(f"""
         <div class="metric-card" style="border-left-color: {severity_color};">
-            <div style="font-size: 0.75rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600; margin-bottom: 0.75rem;">Transport Queue</div>
+            <div style="font-size: 0.75rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600; margin-bottom: 0.75rem;">Transport-Warteschlange</div>
             <div style="font-size: 2.5rem; font-weight: 700; color: #111827; margin: 0.75rem 0; letter-spacing: -0.02em;">{transport_queue}</div>
             <div style="margin-top: 1rem;">
                 {badge_html}
@@ -691,7 +691,7 @@ if page == "Dashboard":
         badge_html = render_badge(risk_hint, risk_severity)
         st.markdown(f"""
         <div class="metric-card" style="border-left-color: {severity_color};">
-            <div style="font-size: 0.75rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600; margin-bottom: 0.75rem;">Inventory/Device Risk</div>
+            <div style="font-size: 0.75rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600; margin-bottom: 0.75rem;">Bestands-/Geräterisiko</div>
             <div style="font-size: 2.5rem; font-weight: 700; color: #111827; margin: 0.75rem 0; letter-spacing: -0.02em;">{risk_count}</div>
             <div style="margin-top: 1rem;">
                 {badge_html}
