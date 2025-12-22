@@ -8,24 +8,24 @@ import random
 
 
 def calculate_prediction_confidence(base_value: float, time_horizon: int) -> float:
-    """Calculate prediction confidence based on time horizon"""
-    # Shorter horizons = higher confidence
+    """Berechne Prognose-Vertrauen basierend auf dem Zeithorizont"""
+    # Kürzere Horizonte = höheres Vertrauen
     confidence = max(0.6, 1.0 - (time_horizon / 60) * 0.3)
     return round(confidence, 2)
 
 
 def format_time_ago(timestamp: str) -> str:
-    """Format timestamp as relative time"""
+    """Formatiere Zeitstempel als relative Zeit"""
     if isinstance(timestamp, str):
         try:
-            # Try ISO format first
+            # Versuche zuerst ISO-Format
             dt = datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
         except:
             try:
-                # Try SQLite datetime format
+                # Versuche SQLite-Datumsformat
                 dt = datetime.strptime(timestamp, '%Y-%m-%d %H:%M:%S')
             except:
-                # Fallback to current time if parsing fails
+                # Fallback auf "kürzlich", wenn das Parsen fehlschlägt
                 return "kürzlich"
     else:
         dt = timestamp
@@ -47,163 +47,198 @@ def format_time_ago(timestamp: str) -> str:
 
 
 def get_severity_color(severity: str) -> str:
-    """Get color for severity badge"""
-    colors = {
-        "high": "#DC2626",      # red-600
-        "medium": "#F59E0B",    # amber-500
-        "low": "#10B981",       # emerald-500
-        "critical": "#991B1B",  # red-800
+    """Farbe für Schweregrad-Badge ermitteln"""
+    farben = {
+        "hoch": "#DC2626",      # rot-600
+        "mittel": "#F59E0B",    # bernstein-500
+        "niedrig": "#10B981",   # smaragd-500
+        "kritisch": "#991B1B",  # rot-800
+        # Für Kompatibilität mit englischen Keys:
+        "high": "#DC2626",
+        "medium": "#F59E0B",
+        "low": "#10B981",
+        "critical": "#991B1B",
     }
-    return colors.get(severity.lower(), "#6B7280")
+    return farben.get(severity.lower(), "#6B7280")
 
 
 def get_priority_color(priority: str) -> str:
-    """Get color for priority badge"""
+    """Farbe für Prioritäts-Badge ermitteln"""
     return get_severity_color(priority)
 
 
 def get_risk_color(risk_level: str) -> str:
-    """Get color for risk level badge"""
+    """Farbe für Risikostufen-Badge ermitteln (unterstützt Deutsch und Englisch)"""
     return get_severity_color(risk_level)
 
 
 def get_status_color(status: str) -> str:
-    """Get color for status badge"""
-    colors = {
-        "pending": "#F59E0B",      # amber-500
-        "in_progress": "#3B82F6",  # blue-500
-        "completed": "#10B981",   # emerald-500
-        "accepted": "#10B981",     # emerald-500
-        "rejected": "#EF4444",     # red-500
-        "operational": "#10B981",  # emerald-500
-        "maintenance": "#F59E0B",  # amber-500
-        "critical": "#DC2626",     # red-600
+    """Farbe für Status-Badge ermitteln"""
+    farben = {
+        # Deutsch
+        "ausstehend": "#F59E0B",      # bernstein-500
+        "in_bearbeitung": "#3B82F6",  # blau-500
+        "abgeschlossen": "#10B981",   # smaragd-500
+        "akzeptiert": "#10B981",      # smaragd-500
+        "abgelehnt": "#EF4444",       # rot-500
+        "betriebsbereit": "#10B981",  # smaragd-500
+        "wartung": "#F59E0B",         # bernstein-500
+        "kritisch": "#DC2626",        # rot-600
+        # Englisch (Kompatibilität)
+        "pending": "#F59E0B",
+        "in_progress": "#3B82F6",
+        "completed": "#10B981",
+        "accepted": "#10B981",
+        "rejected": "#EF4444",
+        "operational": "#10B981",
+        "maintenance": "#F59E0B",
+        "critical": "#DC2626",
     }
-    return colors.get(status.lower(), "#6B7280")
+    return farben.get(status.lower(), "#6B7280")
 
 
 def calculate_inventory_status(current: int, min_threshold: int, max_capacity: int) -> Dict:
-    """Calculate inventory status and percentage"""
-    percentage = (current / max_capacity) * 100 if max_capacity > 0 else 0
-    is_low = current < min_threshold
-    is_critical = current < (min_threshold * 0.5)
-    
+    """Berechne Lagerstatus und Prozentsatz"""
+    prozent = (current / max_capacity) * 100 if max_capacity > 0 else 0
+    ist_niedrig = current < min_threshold
+    ist_kritisch = current < (min_threshold * 0.5)
+    # Status sowohl auf Deutsch als auch Englisch für Kompatibilität
+    if ist_kritisch:
+        status = "kritisch"
+        status_en = "critical"
+    elif ist_niedrig:
+        status = "niedrig"
+        status_en = "low"
+    else:
+        status = "normal"
+        status_en = "normal"
     return {
-        "percentage": round(percentage, 1),
-        "is_low": is_low,
-        "is_critical": is_critical,
-        "status": "critical" if is_critical else ("low" if is_low else "normal")
+        "percentage": round(prozent, 1),
+        "is_low": ist_niedrig,
+        "is_critical": ist_kritisch,
+        "status": status,
+        "status_en": status_en
     }
 
 
 def calculate_capacity_status(utilization: float) -> Dict:
-    """Calculate capacity status"""
+    """Berechne Kapazitätsstatus"""
     if utilization >= 0.9:
-        status = "critical"
+        status = "kritisch"
+        status_en = "critical"
         color = "#DC2626"
     elif utilization >= 0.75:
-        status = "high"
+        status = "hoch"
+        status_en = "high"
         color = "#F59E0B"
     elif utilization >= 0.5:
-        status = "moderate"
+        status = "moderat"
+        status_en = "moderate"
         color = "#3B82F6"
     else:
-        status = "low"
+        status = "niedrig"
+        status_en = "low"
         color = "#10B981"
-    
     return {
         "status": status,
+        "status_en": status_en,
         "color": color,
         "percentage": round(utilization * 100, 1)
     }
 
 
 def generate_short_term_prediction(current_value: float, trend: str = "stable") -> Dict:
-    """Generate 5-15 minute predictions"""
-    # Simple prediction logic
+    """Erzeuge 5-15 Minuten Prognosen"""
+    # Einfache Prognoselogik
     if trend == "increasing":
-        multiplier = 1.1
+        multiplikator = 1.1
     elif trend == "decreasing":
-        multiplier = 0.9
+        multiplikator = 0.9
     else:
-        multiplier = 1.0
+        multiplikator = 1.0
     
-    predictions = []
-    for minutes in [5, 10, 15]:
-        predicted = current_value * (multiplier ** (minutes / 10))
-        confidence = calculate_prediction_confidence(predicted, minutes)
-        predictions.append({
-            "minutes": minutes,
-            "value": round(predicted, 1),
-            "confidence": confidence
+    prognosen = []
+    for minuten in [5, 10, 15]:
+        prognosewert = current_value * (multiplikator ** (minuten / 10))
+        vertrauen = calculate_prediction_confidence(prognosewert, minuten)
+        prognosen.append({
+            "minuten": minuten,
+            "wert": round(prognosewert, 1),
+            "vertrauen": vertrauen
         })
     
-    return predictions
+    return prognosen
 
 
 def format_duration_minutes(minutes: int) -> str:
-    """Format duration in minutes to human-readable string"""
+    """Formatiere Dauer in Minuten als lesbare Zeichenkette"""
     if minutes < 60:
-        return f"{minutes}m"
+        return f"{minutes} Min."
     else:
-        hours = minutes // 60
-        mins = minutes % 60
-        if mins == 0:
-            return f"{hours}h"
-        return f"{hours}h {mins}m"
+        stunden = minutes // 60
+        minuten = minutes % 60
+        if minuten == 0:
+            return f"{stunden} Std."
+        return f"{stunden} Std. {minuten} Min."
 
 
 def get_department_color(department: str) -> str:
-    """Get consistent color for department"""
-    colors = {
-        "ER": "#EF4444",           # red-500
-        "ICU": "#DC2626",          # red-600
-        "Surgery": "#3B82F6",      # blue-500
-        "Cardiology": "#8B5CF6",   # violet-500
-        "General Ward": "#10B981", # emerald-500
+    """Gibt eine konsistente Farbe für die Abteilung zurück"""
+    farben = {
+        "ER": "#EF4444",              # Notaufnahme
+        "ICU": "#DC2626",             # Intensivstation
+        "Surgery": "#3B82F6",         # Chirurgie
+        "Cardiology": "#8B5CF6",      # Kardiologie
+        "General Ward": "#10B981",    # Allgemeinstation
+        # Deutsche Abteilungsnamen für Kompatibilität
+        "Notaufnahme": "#EF4444",
+        "Intensivstation": "#DC2626",
+        "Chirurgie": "#3B82F6",
+        "Kardiologie": "#8B5CF6",
+        "Allgemeinstation": "#10B981",
     }
-    return colors.get(department, "#6B7280")
+    return farben.get(department, "#6B7280")
 
 
 def calculate_device_risk_score(usage_hours: int, days_until_maintenance: int) -> str:
-    """Calculate device maintenance risk level"""
+    """Berechne das Wartungsrisiko eines Geräts"""
     if days_until_maintenance < 7 or usage_hours > 3000:
-        return "high"
+        return "hoch"
     elif days_until_maintenance < 30 or usage_hours > 2500:
-        return "medium"
+        return "mittel"
     else:
-        return "low"
+        return "niedrig"
 
 
 def get_system_status() -> tuple[str, str]:
-    """Get current system status (status, color)"""
-    # In a real app, this would check actual system health
-    # For MVP, return operational
-    return "operational", "#10B981"
+    """Gibt den aktuellen Systemstatus zurück (Status, Farbe)"""
+    # In einer echten App würde hier der Systemzustand geprüft
+    # Für das MVP: immer "betriebsbereit"
+    return "betriebsbereit", "#10B981"
 
 
 def calculate_metric_severity(value: float, thresholds: dict) -> tuple[str, str]:
     """
-    Calculate severity based on value and thresholds
-    Returns: (severity, hint_text)
+    Berechne Schweregrad basierend auf Wert und Schwellenwerten
+    Rückgabe: (schweregrad, hinweis_text)
     thresholds: {'critical': max, 'watch': max, 'stable': max}
     """
     if value >= thresholds.get('critical', 90):
-        return 'high', 'Kritisch'
+        return 'hoch', 'Kritisch'
     elif value >= thresholds.get('watch', 70):
-        return 'medium', 'Beobachten'
+        return 'mittel', 'Beobachten'
     else:
-        return 'low', 'Stabil'
+        return 'niedrig', 'Stabil'
 
 
 def get_metric_severity_for_load(load_percent: float) -> tuple[str, str]:
-    """Get severity for load-based metrics (0-100%)"""
+    """Gibt den Schweregrad für Auslastungsmetriken (0-100%) zurück"""
     if load_percent >= 90:
-        return 'high', 'Kritisch'
+        return 'hoch', 'Kritisch'
     elif load_percent >= 75:
-        return 'medium', 'Beobachten'
+        return 'mittel', 'Beobachten'
     else:
-        return 'low', 'Stabil'
+        return 'niedrig', 'Stabil'
 
 
 def get_metric_severity_for_count(count: int, thresholds: dict) -> tuple[str, str]:
@@ -231,28 +266,32 @@ def get_metric_severity_for_free(free: int, total: int) -> tuple[str, str]:
 
 def calculate_explanation_score(trend_strength: float, data_points: int, confidence: float) -> str:
     """
-    Calculate explanation score (low/medium/high) based on trend strength
-    trend_strength: 0-1 (how strong the trend is)
-    data_points: number of data points used
-    confidence: 0-1 (prediction confidence)
+    Erkläre den Erklärungsscore (niedrig/mittel/hoch) basierend auf Trendstärke
+    trend_strength: 0-1 (wie stark ist der Trend)
+    data_points: Anzahl der verwendeten Datenpunkte
+    confidence: 0-1 (Prognose-Vertrauen)
     """
-    # Combine factors
+    # Faktoren kombinieren
     score = (trend_strength * 0.4) + (min(data_points / 20, 1.0) * 0.3) + (confidence * 0.3)
     
     if score >= 0.7:
-        return "high"
+        return "hoch"
     elif score >= 0.4:
-        return "medium"
+        return "mittel"
     else:
-        return "low"
+        return "niedrig"
 
 
 def get_explanation_score_color(score: str) -> str:
-    """Get color for explanation score badge"""
-    colors = {
-        "high": "#10B981",    # emerald-500
-        "medium": "#F59E0B",  # amber-500
-        "low": "#6B7280",     # gray-500
+    """Farbe für Erklärungsscore-Badge ermitteln"""
+    farben = {
+        "hoch": "#10B981",    # smaragd-500
+        "mittel": "#F59E0B",  # bernstein-500
+        "niedrig": "#6B7280", # grau-500
+        # Für Kompatibilität mit englischen Keys:
+        "high": "#10B981",
+        "medium": "#F59E0B",
+        "low": "#6B7280",
     }
-    return colors.get(score.lower(), "#6B7280")
+    return farben.get(score.lower(), "#6B7280")
 

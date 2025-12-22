@@ -410,33 +410,24 @@ PAGES = {
 # Get system status
 system_status, status_color = get_system_status()
 
-# Demo Mode toggle (in sidebar - must be early to avoid bug)
+
+# HospitalFlow title in sidebar (top left, above Demo-Modus)
+st.sidebar.markdown("""
+<div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem;">
+    <span style="font-size: 2rem;">🏥</span>
+    <span style="font-size: 1.5rem; font-weight: 700; color: #4f46e5; letter-spacing: -0.025em;">HospitalFlow</span>
+</div>
+<div style="font-size: 0.875rem; color: #6b7280; margin-bottom: 0.5rem;">Operations Dashboard</div>
+""", unsafe_allow_html=True)
+
+# Demo Mode toggle (in sidebar - below HospitalFlow)
 st.sidebar.markdown("---")
 demo_mode = st.sidebar.toggle("🎬 Demo-Modus", value=False, help="Erhöht die Ereignisfrequenz für Demonstrationszwecke")
 if demo_mode:
     st.sidebar.info("Demo-Modus: Ereignisse treten häufiger auf")
 st.sidebar.markdown("---")
 
-# Sticky Header with professional design
-current_time = datetime.now().strftime('%H:%M:%S')
-st.markdown(f"""
-<div class="sticky-header">
-    <div class="header-content">
-        <div class="header-title">
-            <span style="font-size: 1.75rem;">🏥</span>
-            <span>HospitalFlow</span>
-            <span style="font-size: 0.875rem; font-weight: 400; color: #6b7280; margin-left: 0.5rem;">Operations Dashboard</span>
-        </div>
-        <div style="display: flex; align-items: center; gap: 1rem;">
-            <div class="status-badge" style="background: {status_color}15; color: {status_color}; border: 1px solid {status_color}30;">
-                <span class="status-dot" style="background: {status_color};"></span>
-                <span>{system_status.upper()}</span>
-            </div>
-            <div class="timestamp" style="font-size: 0.75rem; color: #6b7280;">{current_time}</div>
-        </div>
-    </div>
-</div>
-""", unsafe_allow_html=True)
+
 
 # Sidebar navigation with professional styling
 st.sidebar.markdown("""
@@ -1670,10 +1661,15 @@ elif page == "Entlassungsplanung":
     
     if discharge:
         df_disch = pd.DataFrame(discharge)
-        
+        # Rename columns for German legend/axis
+        df_disch = df_disch.rename(columns={
+            'ready_for_discharge_count': 'Entlassungsbereit',
+            'pending_discharge_count': 'Ausstehend'
+        })
+
         # Summary metrics
-        total_ready = df_disch['ready_for_discharge_count'].sum()
-        total_pending = df_disch['pending_discharge_count'].sum()
+        total_ready = df_disch['Entlassungsbereit'].sum()
+        total_pending = df_disch['Ausstehend'].sum()
         avg_los = df_disch['avg_length_of_stay_hours'].mean()
         
         col1, col2, col3 = st.columns(3)
@@ -1692,23 +1688,27 @@ elif page == "Entlassungsplanung":
             col_idx = idx % 3
             with cols[col_idx]:
                 dept_color = get_department_color(dept_data['department'])
+                # Use German keys if present, else fallback to English for backward compatibility
+                ready = dept_data.get('Entlassungsbereit', dept_data.get('ready_for_discharge_count', 0))
+                pending = dept_data.get('Ausstehend', dept_data.get('pending_discharge_count', 0))
+                avg_los = dept_data.get('avg_length_of_stay_hours', 0)
                 st.markdown(f"""
                 <div style="background: white; padding: 1.5rem; border-radius: 8px; margin-bottom: 1rem; border-top: 4px solid {dept_color};">
                     <h4 style="margin: 0 0 1rem 0; color: {dept_color};">{dept_data['department']}</h4>
                     <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                        <span style="color: #6b7280;">Ready:</span>
-                        <strong>{dept_data['ready_for_discharge_count']}</strong>
+                        <span style="color: #6b7280;">Entlassungsbereit:</span>
+                        <strong>{ready}</strong>
                     </div>
                     <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                        <span style="color: #6b7280;">Pending:</span>
-                        <strong>{dept_data['pending_discharge_count']}</strong>
+                        <span style="color: #6b7280;">Ausstehend:</span>
+                        <strong>{pending}</strong>
                     </div>
                     <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                        <span style="color: #6b7280;">Avg LOS:</span>
-                        <strong>{dept_data['avg_length_of_stay_hours']:.1f}h</strong>
+                        <span style="color: #6b7280;">Ø Verweildauer:</span>
+                        <strong>{avg_los:.1f}h</strong>
                     </div>
                     <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e5e7eb;">
-                        <div style="font-size: 0.75rem; color: #9ca3af; margin-bottom: 0.25rem;">Capacity Utilization</div>
+                        <div style="font-size: 0.75rem; color: #9ca3af; margin-bottom: 0.25rem;">Kapazitätsauslastung</div>
                         <div style="background: #e5e7eb; height: 8px; border-radius: 4px; overflow: hidden;">
                             <div style="background: {dept_color}; height: 100%; width: {dept_data['discharge_capacity_utilization']*100}%;"></div>
                         </div>
@@ -1724,10 +1724,15 @@ elif page == "Entlassungsplanung":
             fig = px.bar(
                 df_disch,
                 x='department',
-                y=['ready_for_discharge_count', 'pending_discharge_count'],
-                title="Discharge Status by Department",
+                y=['Entlassungsbereit', 'Ausstehend'],
+                title="Entlassungsstatus nach Abteilung",
                 barmode='group',
-                color_discrete_map={'ready_for_discharge_count': '#10B981', 'pending_discharge_count': '#F59E0B'}
+                color_discrete_map={'Entlassungsbereit': '#10B981', 'Ausstehend': '#F59E0B'},
+                labels={
+                    'department': 'Abteilung',
+                    'Entlassungsbereit': 'Entlassungsbereit',
+                    'Ausstehend': 'Ausstehend'
+                }
             )
             fig.update_layout(
                 height=300,
@@ -1737,13 +1742,34 @@ elif page == "Entlassungsplanung":
             st.plotly_chart(fig, use_container_width=True)
         
         with col2:
+            # Mapping for department names (English to German)
+            department_map = {
+                'ER': 'Notaufnahme',
+                'ICU': 'Intensivstation',
+                'Surgery': 'Chirurgie',
+                'General Ward': 'Allgemeinstation',
+                'Cardiology': 'Kardiologie',
+                'Neurology': 'Neurologie',
+                'Pediatrics': 'Pädiatrie',
+                'Oncology': 'Onkologie',
+                'Orthopedics': 'Orthopädie',
+                'Maternity': 'Geburtshilfe',
+                'Radiology': 'Radiologie',
+                'Other': 'Andere'
+            }
+            # Add German department column for plotting
+            df_disch['Abteilung'] = df_disch['department'].map(department_map).fillna(df_disch['department'])
             fig = px.bar(
                 df_disch,
-                x='department',
+                x='Abteilung',
                 y='avg_length_of_stay_hours',
-                title="Average Length of Stay",
-                color='department',
-                color_discrete_map={dept: get_department_color(dept) for dept in df_disch['department']}
+                title="Ø Verweildauer nach Abteilung",
+                color='Abteilung',
+                color_discrete_map={department_map.get(dept, dept): get_department_color(dept) for dept in df_disch['department']},
+                labels={
+                    'Abteilung': 'Abteilung',
+                    'avg_length_of_stay_hours': 'Ø Verweildauer (Std.)'
+                }
             )
             fig.update_layout(
                 height=300,
@@ -1753,231 +1779,248 @@ elif page == "Entlassungsplanung":
             )
             st.plotly_chart(fig, use_container_width=True)
     else:
-        st.markdown(render_empty_state("🏥", "No discharge planning data", "Discharge planning data will appear here when available"), unsafe_allow_html=True)
+        st.markdown(render_empty_state("🏥", "Keine Entlassungsplanungsdaten", "Entlassungsplanungsdaten werden hier angezeigt, sobald sie verfügbar sind"), unsafe_allow_html=True)
 
 elif page == "Entlassung":
-    # Simulate expected discharges data
-    now = datetime.now()
-    
-    # Generate expected discharges for next 12 hours (hourly buckets)
-    hourly_discharges = []
-    for hour in range(12):
-        hour_time = now + timedelta(hours=hour)
-        # Simulate discharge counts (higher in morning/afternoon, lower at night)
-        if 8 <= hour < 12:  # Morning peak
-            count = random.randint(3, 8)
-        elif 12 <= hour < 18:  # Afternoon peak
-            count = random.randint(2, 6)
-        elif 18 <= hour < 22:  # Evening
-            count = random.randint(1, 4)
-        else:  # Night
-            count = random.randint(0, 2)
-        
-        hourly_discharges.append({
-            'hour': hour_time,
-            'hour_label': hour_time.strftime('%H:00'),
-            'count': count
+    # Erwartete Entlassungen simulieren
+    jetzt = datetime.now()
+
+    # Erwartete Entlassungen für die nächsten 12 Stunden (stündliche Intervalle) generieren
+    stündliche_entlassungen = []
+    for stunde in range(12):
+        stundenzeit = jetzt + timedelta(hours=stunde)
+        # Entlassungszahlen simulieren (morgens/nachmittags höher, nachts niedriger)
+        if 8 <= stunde < 12:  # Morgenpeak
+            anzahl = random.randint(3, 8)
+        elif 12 <= stunde < 18:  # Nachmittagspeak
+            anzahl = random.randint(2, 6)
+        elif 18 <= stunde < 22:  # Abend
+            anzahl = random.randint(1, 4)
+        else:  # Nacht
+            anzahl = random.randint(0, 2)
+
+        stündliche_entlassungen.append({
+            'stunde': stundenzeit,
+            'stunden_label': stundenzeit.strftime('%H:00'),
+            'anzahl': anzahl
         })
-    
-    # Calculate expected discharges in next 4 hours
-    next_4h_discharges = sum([d['count'] for d in hourly_discharges[:4]])
-    
-    # Big metric for next 4 hours
-    st.markdown("### Expected Discharges")
-    st.markdown("")  # Spacing
-    
-    col1, col2, col3 = st.columns([2, 1, 1])
-    with col1:
+
+    # Erwartete Entlassungen in den nächsten 4 Stunden berechnen
+    nächste_4h_entlassungen = sum([d['anzahl'] for d in stündliche_entlassungen[:4]])
+
+    # Große Kennzahl für die nächsten 4 Stunden
+    st.markdown("### Erwartete Entlassungen")
+    st.markdown("")  # Abstand
+
+    spalte1, spalte2, spalte3 = st.columns([2, 1, 1])
+    with spalte1:
         st.markdown(f"""
         <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 2rem; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
             <div style="color: white; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; opacity: 0.9;">
-                Expected Discharges in Next 4 Hours
+                Erwartete Entlassungen in den nächsten 4 Stunden
             </div>
             <div style="color: white; font-size: 4rem; font-weight: 700; line-height: 1;">
-                {next_4h_discharges}
+                {nächste_4h_entlassungen}
             </div>
             <div style="color: white; font-size: 1rem; margin-top: 0.5rem; opacity: 0.9;">
-                Aggregated count
+                Aggregierte Anzahl
             </div>
         </div>
         """, unsafe_allow_html=True)
-    
-    with col2:
-        next_8h_discharges = sum([d['count'] for d in hourly_discharges[:8]])
-        st.metric("Next 8 Hours", next_8h_discharges, delta=None)
-    
-    with col3:
-        next_12h_discharges = sum([d['count'] for d in hourly_discharges])
-        st.metric("Next 12 Hours", next_12h_discharges, delta=None)
-    
+
+    with spalte2:
+        nächste_8h_entlassungen = sum([d['anzahl'] for d in stündliche_entlassungen[:8]])
+        st.metric("Nächste 8 Stunden", nächste_8h_entlassungen, delta=None)
+
+    with spalte3:
+        nächste_12h_entlassungen = sum([d['anzahl'] for d in stündliche_entlassungen])
+        st.metric("Nächste 12 Stunden", nächste_12h_entlassungen, delta=None)
+
     st.markdown("---")
-    
-    # Timeline chart for next 12 hours
-    st.markdown("### Expected Discharges Timeline (Next 12 Hours)")
-    st.markdown("")  # Spacing
-    
-    df_timeline = pd.DataFrame(hourly_discharges)
-    
-    fig_timeline = px.bar(
-        df_timeline,
-        x='hour_label',
-        y='count',
+
+    # Zeitstrahl für die nächsten 12 Stunden
+    st.markdown("### Entlassungs-Zeitstrahl (Nächste 12 Stunden)")
+    st.markdown("")  # Abstand
+
+    df_zeitstrahl = pd.DataFrame(stündliche_entlassungen)
+
+    fig_zeitstrahl = px.bar(
+        df_zeitstrahl,
+        x='stunden_label',
+        y='anzahl',
         title="",
-        labels={'hour_label': 'Time', 'count': 'Expected Discharges'},
-        color='count',
+        labels={'stunden_label': 'Zeit', 'anzahl': 'Erwartete Entlassungen'},
+        color='anzahl',
         color_continuous_scale='Blues'
     )
-    fig_timeline.update_layout(
+    fig_zeitstrahl.update_layout(
         height=400,
         margin=dict(l=0, r=0, t=0, b=0),
         plot_bgcolor='rgba(0,0,0,0)',
         paper_bgcolor='rgba(0,0,0,0)',
         xaxis_title="",
-        yaxis_title="Expected Discharges",
+        yaxis_title="Erwartete Entlassungen",
         showlegend=False,
         xaxis=dict(showgrid=False),
         yaxis=dict(showgrid=True, gridcolor='#e5e7eb', showline=False)
     )
-    fig_timeline.update_traces(marker_line_width=0)
-    st.plotly_chart(fig_timeline, use_container_width=True)
-    
+    fig_zeitstrahl.update_traces(marker_line_width=0)
+    st.plotly_chart(fig_zeitstrahl, use_container_width=True)
+
     st.markdown("---")
-    
-    # Recommendations section
-    st.markdown("### Recommendations")
-    st.markdown("")  # Spacing
-    
-    # Simulate recommendations based on discharge patterns
-    recommendations = []
-    
-    # Check for cases that need earlier discharge planning
-    high_discharge_hours = [d for d in hourly_discharges[:6] if d['count'] >= 5]
-    if high_discharge_hours:
-        total_high = sum([d['count'] for d in high_discharge_hours])
-        recommendations.append({
+
+    # Empfehlungen
+    st.markdown("### Empfehlungen")
+    st.markdown("")  # Abstand
+
+    # Empfehlungen basierend auf Entlassungsmustern simulieren
+    empfehlungen = []
+
+    # Prüfe auf Fälle, die eine frühere Entlassungsplanung benötigen
+    hohe_entlassungsstunden = [d for d in stündliche_entlassungen[:6] if d['anzahl'] >= 5]
+    if hohe_entlassungsstunden:
+        gesamt_hoch = sum([d['anzahl'] for d in hohe_entlassungsstunden])
+        empfehlungen.append({
             "type": "early_planning",
-            "message": f"Start discharge planning earlier for {total_high} cases (aggregate)",
-            "details": f"High discharge volume expected in next 6 hours. Early planning can reduce delays by 20-30%.",
-            "priority": "medium"
+            "message": f"Frühzeitige Entlassungsplanung für {gesamt_hoch} Fälle (gesamt) starten",
+            "details": f"Hohes Entlassungsaufkommen in den nächsten 6 Stunden erwartet. Frühzeitige Planung kann Verzögerungen um 20-30% reduzieren.",
+            "priority": "mittel"
         })
-    
-    # Check for potential bottlenecks
-    peak_hour = max(hourly_discharges[:8], key=lambda x: x['count'])
-    if peak_hour['count'] >= 6:
-        recommendations.append({
+
+    # Prüfe auf potenzielle Engpässe
+    spitzenstunde = max(stündliche_entlassungen[:8], key=lambda x: x['anzahl'])
+    if spitzenstunde['anzahl'] >= 6:
+        empfehlungen.append({
             "type": "resource_allocation",
-            "message": f"Allocate additional resources for {peak_hour['hour_label']} (expected {peak_hour['count']} discharges)",
-            "details": f"Peak discharge time identified. Consider additional staff or transport capacity.",
-            "priority": "high"
+            "message": f"Zusätzliche Ressourcen für {spitzenstunde['stunden_label']} bereitstellen (erwartet {spitzenstunde['anzahl']} Entlassungen)",
+            "details": f"Spitzenzeit für Entlassungen erkannt. Zusätzliche Mitarbeitende oder Transportkapazität einplanen.",
+            "priority": "hoch"
         })
-    
-    # Check for low discharge periods (opportunity for catch-up)
-    low_discharge_hours = [d for d in hourly_discharges if d['count'] <= 1]
-    if len(low_discharge_hours) >= 3:
-        recommendations.append({
+
+    # Prüfe auf niedrige Entlassungsphasen (Aufholpotenzial)
+    niedrige_entlassungsstunden = [d for d in stündliche_entlassungen if d['anzahl'] <= 1]
+    if len(niedrige_entlassungsstunden) >= 3:
+        empfehlungen.append({
             "type": "catch_up",
-            "message": f"Use low-activity periods for catch-up (3+ hours with ≤1 discharge expected)",
-            "details": "Multiple low-activity periods identified. Good opportunity to process pending discharges.",
-            "priority": "low"
+            "message": f"Niedrigphasen für Aufholarbeiten nutzen (mind. 3 Stunden mit ≤1 erwarteter Entlassung)",
+            "details": "Mehrere Niedrigphasen erkannt. Gute Gelegenheit, ausstehende Entlassungen zu bearbeiten.",
+            "priority": "niedrig"
         })
-    
-    if recommendations:
-        for rec in recommendations:
-            priority_color = get_priority_color(rec['priority'])
-            badge_html = render_badge(rec['priority'].upper(), rec['priority'])
-            
+
+    if empfehlungen:
+        for emp in empfehlungen:
+            priority_color = get_priority_color(emp['priority'])
+            badge_html = render_badge(emp['priority'].upper(), emp['priority'])
+
             st.markdown(f"""
             <div style="background: white; padding: 1.5rem; border-radius: 8px; margin-bottom: 1rem; border-left: 4px solid {priority_color}; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
                 <div style="display: flex; align-items: start; gap: 0.75rem; margin-bottom: 0.75rem;">
                     {badge_html}
                     <div style="flex: 1;">
-                        <h4 style="margin: 0 0 0.5rem 0; color: #1f2937;">{rec['message']}</h4>
-                        <p style="color: #6b7280; margin: 0; line-height: 1.6;">{rec['details']}</p>
+                        <h4 style="margin: 0 0 0.5rem 0; color: #1f2937;">{emp['message']}</h4>
+                        <p style="color: #6b7280; margin: 0; line-height: 1.6;">{emp['details']}</p>
                     </div>
                 </div>
             </div>
             """, unsafe_allow_html=True)
     else:
-        st.markdown(render_empty_state("💡", "No recommendations at this time", "All systems operating within normal parameters"), unsafe_allow_html=True)
-    
-    # Additional aggregated statistics
+        st.markdown(render_empty_state("💡", "Keine Empfehlungen zum aktuellen Zeitpunkt", "Alle Systeme arbeiten im normalen Bereich"), unsafe_allow_html=True)
+
+    # Weitere aggregierte Statistiken
     st.markdown("---")
-    st.markdown("### Statistics")
-    st.markdown("")  # Spacing
-    
-    col1, col2, col3, col4 = st.columns(4)
-    
-    with col1:
-        peak_hour = max(hourly_discharges, key=lambda x: x['count'])
-        st.metric("Peak Hour", peak_hour['hour_label'], delta=f"{peak_hour['count']} discharges")
-    
-    with col2:
-        avg_per_hour = sum([d['count'] for d in hourly_discharges]) / len(hourly_discharges)
-        st.metric("Avg per Hour", f"{avg_per_hour:.1f}", delta=None)
-    
-    with col3:
-        total_12h = sum([d['count'] for d in hourly_discharges])
-        st.metric("Total (12h)", total_12h, delta=None)
-    
-    with col4:
-        low_hours = len([d for d in hourly_discharges if d['count'] <= 1])
-        st.metric("Low Activity Hours", low_hours, delta=None)
+    st.markdown("### Statistiken")
+    st.markdown("")  # Abstand
+
+    spalte1, spalte2, spalte3, spalte4 = st.columns(4)
+
+    with spalte1:
+        spitzenstunde = max(stündliche_entlassungen, key=lambda x: x['anzahl'])
+        st.metric("Spitzenstunde", spitzenstunde['stunden_label'], delta=f"{spitzenstunde['anzahl']} Entlassungen")
+
+    with spalte2:
+        durchschnitt_pro_stunde = sum([d['anzahl'] for d in stündliche_entlassungen]) / len(stündliche_entlassungen)
+        st.metric("Durchschnitt pro Stunde", f"{durchschnitt_pro_stunde:.1f}", delta=None)
+
+    with spalte3:
+        gesamt_12h = sum([d['anzahl'] for d in stündliche_entlassungen])
+        st.metric("Gesamt (12h)", gesamt_12h, delta=None)
+
+    with spalte4:
+        niedrige_stunden = len([d for d in stündliche_entlassungen if d['anzahl'] <= 1])
+        st.metric("Stunden mit niedriger Aktivität", niedrige_stunden, delta=None)
 
 elif page == "Kapazitätsübersicht":
-    st.markdown("### Hospital Capacity Overview")
+    st.markdown("### Kapazitätsübersicht")
     
     capacity = db.get_capacity_overview()
     
     if capacity:
         df_cap = pd.DataFrame(capacity)
         
-        # Overall metrics
-        total_beds = df_cap['total_beds'].sum()
-        occupied_beds = df_cap['occupied_beds'].sum()
-        available_beds = df_cap['available_beds'].sum()
-        overall_util = occupied_beds / total_beds if total_beds > 0 else 0
-        
+        # Gesamte Kennzahlen
+        gesamt_betten = df_cap['total_beds'].sum()
+        belegte_betten = df_cap['occupied_beds'].sum()
+        verfügbare_betten = df_cap['available_beds'].sum()
+        gesamt_auslastung = belegte_betten / gesamt_betten if gesamt_betten > 0 else 0
+
         col1, col2, col3, col4 = st.columns(4)
         with col1:
-            st.metric("Total Beds", total_beds)
+            st.metric("Gesamtbetten", gesamt_betten)
         with col2:
-            st.metric("Occupied", occupied_beds)
+            st.metric("Belegt", belegte_betten)
         with col3:
-            st.metric("Available", available_beds)
+            st.metric("Verfügbar", verfügbare_betten)
         with col4:
-            cap_status = calculate_capacity_status(overall_util)
-            st.metric("Overall Utilization", f"{cap_status['percentage']}%")
-        
+            kapazitäts_status = calculate_capacity_status(gesamt_auslastung)
+            st.metric("Gesamtauslastung", f"{kapazitäts_status['percentage']}%")
+
         st.markdown("---")
         
         # Department capacity cards
+        # Mapping for department names (English to German)
+        department_map = {
+            'ER': 'Notaufnahme',
+            'ICU': 'Intensivstation',
+            'Surgery': 'Chirurgie',
+            'General Ward': 'Allgemeinstation',
+            'Cardiology': 'Kardiologie',
+            'Neurology': 'Neurologie',
+            'Pediatrics': 'Pädiatrie',
+            'Oncology': 'Onkologie',
+            'Orthopedics': 'Orthopädie',
+            'Maternity': 'Geburtshilfe',
+            'Radiology': 'Radiologie',
+            'Other': 'Andere'
+        }
         for cap in capacity:
             cap_status = calculate_capacity_status(cap['utilization_rate'])
             dept_color = get_department_color(cap['department'])
+            # Use German department name if available
+            german_dept = department_map.get(cap['department'], cap['department'])
             
             st.markdown(f"""
             <div style="background: white; padding: 1.5rem; border-radius: 8px; margin-bottom: 1rem; border-left: 4px solid {cap_status['color']};">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                    <h4 style="margin: 0; color: {dept_color};">{cap['department']}</h4>
+                    <h4 style="margin: 0; color: {dept_color};">{german_dept}</h4>
                     <span class="badge" style="background: {cap_status['color']}; color: white;">{cap_status['status'].upper()}</span>
                 </div>
                 <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1rem;">
                     <div>
-                        <div style="font-size: 0.75rem; color: #6b7280; text-transform: uppercase;">Total</div>
+                        <div style="font-size: 0.75rem; color: #6b7280; text-transform: uppercase;">Gesamt</div>
                         <div style="font-size: 1.5rem; font-weight: 700; color: #1f2937;">{cap['total_beds']}</div>
                     </div>
                     <div>
-                        <div style="font-size: 0.75rem; color: #6b7280; text-transform: uppercase;">Occupied</div>
+                        <div style="font-size: 0.75rem; color: #6b7280; text-transform: uppercase;">Belegt</div>
                         <div style="font-size: 1.5rem; font-weight: 700; color: #DC2626;">{cap['occupied_beds']}</div>
                     </div>
                     <div>
-                        <div style="font-size: 0.75rem; color: #6b7280; text-transform: uppercase;">Available</div>
+                        <div style="font-size: 0.75rem; color: #6b7280; text-transform: uppercase;">Verfügbar</div>
                         <div style="font-size: 1.5rem; font-weight: 700; color: #10B981;">{cap['available_beds']}</div>
                     </div>
                 </div>
                 <div>
                     <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                        <span style="font-size: 0.875rem; color: #6b7280;">Utilization</span>
+                        <span style="font-size: 0.875rem; color: #6b7280;">Auslastung</span>
                         <span style="font-weight: 600; color: {cap_status['color']};">{cap_status['percentage']}%</span>
                     </div>
                     <div style="background: #e5e7eb; height: 12px; border-radius: 6px; overflow: hidden;">
@@ -1987,71 +2030,100 @@ elif page == "Kapazitätsübersicht":
             </div>
             """, unsafe_allow_html=True)
         
-        # Capacity charts
+       # Capacity charts
         st.markdown("---")
         col1, col2 = st.columns(2)
-        
+
         with col1:
+            # Mapping for department names (English to German)
+            department_map = {
+                'ER': 'Notaufnahme',
+                'ICU': 'Intensivstation',
+                'Surgery': 'Chirurgie',
+                'General Ward': 'Allgemeinstation',
+                'Cardiology': 'Kardiologie',
+                'Neurology': 'Neurologie',
+                'Pediatrics': 'Pädiatrie',
+                'Oncology': 'Onkologie',
+                'Orthopedics': 'Orthopädie',
+                'Maternity': 'Geburtshilfe',
+                'Radiology': 'Radiologie',
+                'Other': 'Andere'
+            }
+            # Add German department column for plotting
+            df_cap['Abteilung'] = df_cap['department'].map(department_map).fillna(df_cap['department'])
+            color_map = {department_map.get(dept, dept): get_department_color(dept) for dept in df_cap['department']}
             fig = px.bar(
                 df_cap,
-                x='department',
+                x='Abteilung',
                 y='utilization_rate',
-                title="Utilization Rate by Department",
-                color='department',
-                color_discrete_map={dept: get_department_color(dept) for dept in df_cap['department']},
-                labels={'utilization_rate': 'Utilization Rate'}
+                title="Auslastung nach Abteilung",
+                color='Abteilung',
+                color_discrete_map=color_map,
+                labels={'utilization_rate': 'Auslastung (%)', 'Abteilung': 'Abteilung'}
             )
             fig.update_layout(
                 height=400,
-                yaxis=dict(tickformat='.0%'),
+                yaxis=dict(
+                    tickformat='.0%',
+                    title='Auslastung (%)'
+                ),
+                xaxis=dict(title='Abteilung'),
                 plot_bgcolor='rgba(0,0,0,0)',
                 paper_bgcolor='rgba(0,0,0,0)',
                 showlegend=False
             )
             st.plotly_chart(fig, use_container_width=True)
-        
+
         with col2:
             fig = go.Figure(data=[
-                go.Bar(name='Occupied', x=df_cap['department'], y=df_cap['occupied_beds'], marker_color='#DC2626'),
-                go.Bar(name='Available', x=df_cap['department'], y=df_cap['available_beds'], marker_color='#10B981')
+                go.Bar(name='Belegt', x=df_cap['Abteilung'], y=df_cap['occupied_beds'], marker_color='#DC2626'),
+                go.Bar(name='Verfügbar', x=df_cap['Abteilung'], y=df_cap['available_beds'], marker_color='#10B981')
             ])
             fig.update_layout(
-                title="Bed Availability by Department",
+                title="Bettenverfügbarkeit nach Abteilung",
                 height=400,
                 barmode='stack',
-                xaxis_title="",
-                yaxis_title="Beds",
+                xaxis_title="Abteilung",
+                yaxis_title="Betten",
+                legend_title_text="Status",
+                legend=dict(
+                    orientation="h",
+                    yanchor="bottom",
+                    y=1.02,
+                    xanchor="right",
+                    x=1
+                ),
                 plot_bgcolor='rgba(0,0,0,0)',
-                paper_bgcolor='rgba(0,0,0,0)',
-                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+                paper_bgcolor='rgba(0,0,0,0)'
             )
             st.plotly_chart(fig, use_container_width=True)
     else:
-        st.markdown(render_empty_state("📋", "No capacity data", "Capacity data will appear here when available"), unsafe_allow_html=True)
+        st.markdown(render_empty_state("📋", "Keine Kapazitätsdaten verfügbar", "Kapazitätsdaten werden hier angezeigt, sobald sie verfügbar sind"), unsafe_allow_html=True)
 
 elif page == "Prüfprotokoll":
-    st.markdown("### Audit Log")
-    st.markdown("Track all system actions and changes")
+    st.markdown("### Prüfprotokoll")
+    st.markdown("Alle Systemaktionen und Änderungen verfolgen")
     
     audit_log = db.get_audit_log(100)
     
     if audit_log:
-        # Filter options
+        # Filteroptionen
         col1, col2 = st.columns(2)
         with col1:
             action_filter = st.selectbox(
-                "Filter by action",
-                ["All"] + list(set([a['action_type'] for a in audit_log])),
+                "Nach Aktion filtern",
+                ["Alle"] + list(set([a['action_type'] for a in audit_log])),
                 key="audit_action"
             )
         with col2:
-            limit = st.slider("Number of entries", 10, 100, 50, key="audit_limit")
+            limit = st.slider("Anzahl der Einträge", 10, 100, 50, key="audit_limit")
         
         filtered_log = audit_log[:limit]
-        if action_filter != "All":
+        if action_filter != "Alle":
             filtered_log = [a for a in filtered_log if a['action_type'] == action_filter]
         
-        # Audit log table
+        # Audit-Log-Tabelle
         st.markdown("---")
         for entry in filtered_log:
             st.markdown(f"""
@@ -2071,44 +2143,45 @@ elif page == "Prüfprotokoll":
             </div>
             """, unsafe_allow_html=True)
     else:
-        st.markdown(render_empty_state("📝", "No audit log entries", "Audit log entries will appear here when available"), unsafe_allow_html=True)
+        st.markdown(render_empty_state("📝", "Keine Prüfprotokoll-Einträge", "Prüfprotokoll-Einträge werden hier angezeigt, sobald sie verfügbar sind"), unsafe_allow_html=True)
 
 elif page == "Vermögenswerte":
-    # Inventory Risk Section
-    st.markdown("### Inventory Risk")
-    st.markdown("")  # Spacing
+    # Abschnitt Lager-/Inventarrisiko
+    st.markdown("### Lagerrisiko")
+    st.markdown("")  # Abstand
     
-    # Simulated inventory materials with risk
+    # Simulierte Inventarmaterialien mit Risiko
     inventory_materials = [
-        {"name": "Surgical Gloves (Nitrile)", "current_stock": 45, "min_threshold": 100, "max_capacity": 500, "unit": "boxes", "department": "Surgery", "days_until_stockout": 3},
-        {"name": "IV Catheters (18G)", "current_stock": 12, "min_threshold": 50, "max_capacity": 300, "unit": "units", "department": "ER", "days_until_stockout": 2},
-        {"name": "Antibiotic Solution (Ceftriaxone)", "current_stock": 8, "min_threshold": 30, "max_capacity": 200, "unit": "vials", "department": "ICU", "days_until_stockout": 1},
-        {"name": "Oxygen Masks (Adult)", "current_stock": 25, "min_threshold": 40, "max_capacity": 150, "unit": "units", "department": "General Ward", "days_until_stockout": 5},
-        {"name": "Defibrillator Pads", "current_stock": 6, "min_threshold": 20, "max_capacity": 100, "unit": "pairs", "department": "Cardiology", "days_until_stockout": 1},
+        {"name": "Untersuchungshandschuhe (Nitril)", "current_stock": 45, "min_threshold": 100, "max_capacity": 500, "unit": "Boxen", "department": "Chirurgie", "days_until_stockout": 3},
+        {"name": "IV-Katheter (18G)", "current_stock": 12, "min_threshold": 50, "max_capacity": 300, "unit": "Stück", "department": "Notaufnahme", "days_until_stockout": 2},
+        {"name": "Antibiotika-Lösung (Ceftriaxon)", "current_stock": 8, "min_threshold": 30, "max_capacity": 200, "unit": "Fläschchen", "department": "Intensivstation", "days_until_stockout": 1},
+        {"name": "Sauerstoffmasken (Erwachsene)", "current_stock": 25, "min_threshold": 40, "max_capacity": 150, "unit": "Stück", "department": "Allgemeinstation", "days_until_stockout": 5},
+        {"name": "Defibrillator-Pads", "current_stock": 6, "min_threshold": 20, "max_capacity": 100, "unit": "Paare", "department": "Kardiologie", "days_until_stockout": 1},
     ]
     
     # Calculate risk for each material
     for material in inventory_materials:
         stock_percent = (material['current_stock'] / material['max_capacity']) * 100
         threshold_percent = (material['min_threshold'] / material['max_capacity']) * 100
-        
+
+        # Risiko auf Deutsch zuweisen
         if material['current_stock'] < material['min_threshold']:
             if material['days_until_stockout'] <= 2:
-                risk_level = "high"
+                risk_level = "hoch"
             else:
-                risk_level = "medium"
+                risk_level = "mittel"
         else:
-            risk_level = "low"
-        
+            risk_level = "niedrig"
+
         material['risk_level'] = risk_level
         material['stock_percent'] = stock_percent
         material['threshold_percent'] = threshold_percent
-    
-    # Sort by risk (high first)
-    inventory_materials.sort(key=lambda x: {'high': 1, 'medium': 2, 'low': 3}[x['risk_level']])
+
+    # Nach Risiko sortieren (hoch zuerst)
+    inventory_materials.sort(key=lambda x: {'hoch': 1, 'mittel': 2, 'niedrig': 3}[x['risk_level']])
     top_5_materials = inventory_materials[:5]
-    
-    # Display top 5 materials table
+
+    # Anzeige der Top-5-Risiko-Materialien
     if top_5_materials:
         table_data = []
         for mat in top_5_materials:
@@ -2116,17 +2189,17 @@ elif page == "Vermögenswerte":
             risk_badge = render_badge(mat['risk_level'].upper(), mat['risk_level'])
             table_data.append({
                 "Material": mat['name'],
-                "Current Stock": f"{mat['current_stock']} {mat['unit']}",
-                "Threshold": f"{mat['min_threshold']} {mat['unit']}",
-                "Days Until Stockout": mat['days_until_stockout'],
-                "Risk": risk_badge,
-                "Department": mat['department']
+                "Aktueller Bestand": f"{mat['current_stock']} {mat['unit']}",
+                "Mindestbestand": f"{mat['min_threshold']} {mat['unit']}",
+                "Tage bis Engpass": mat['days_until_stockout'],
+                "Risiko": risk_badge,
+                "Abteilung": mat['department']
             })
         
         df_inv = pd.DataFrame(table_data)
-        # Convert Risk column to HTML for display
-        st.markdown("#### Top 5 Materials at Risk")
-        st.markdown("")  # Spacing
+        # Risiko-Spalte als HTML anzeigen
+        st.markdown("#### Top 5 Materialien mit Risiko")
+        st.markdown("")  # Abstand
         
         # Display as styled table
         for mat in top_5_materials:
@@ -2140,16 +2213,16 @@ elif page == "Vermögenswerte":
                         <div style="font-size: 0.75rem; color: #6b7280;">{mat['department']}</div>
                     </div>
                     <div>
-                        <div style="font-size: 0.75rem; color: #6b7280; margin-bottom: 0.25rem;">Current</div>
+                        <div style="font-size: 0.75rem; color: #6b7280; margin-bottom: 0.25rem;">Aktuell</div>
                         <div style="font-weight: 600; color: #1f2937;">{mat['current_stock']} {mat['unit']}</div>
                     </div>
                     <div>
-                        <div style="font-size: 0.75rem; color: #6b7280; margin-bottom: 0.25rem;">Threshold</div>
+                        <div style="font-size: 0.75rem; color: #6b7280; margin-bottom: 0.25rem;">Mindestbestand</div>
                         <div style="font-weight: 600; color: #1f2937;">{mat['min_threshold']} {mat['unit']}</div>
                     </div>
                     <div>
-                        <div style="font-size: 0.75rem; color: #6b7280; margin-bottom: 0.25rem;">Days Left</div>
-                        <div style="font-weight: 600; color: {risk_color};">{mat['days_until_stockout']} days</div>
+                        <div style="font-size: 0.75rem; color: #6b7280; margin-bottom: 0.25rem;">Tage bis Engpass</div>
+                        <div style="font-weight: 600; color: {risk_color};">{mat['days_until_stockout']} Tage</div>
                     </div>
                     <div>
                         {risk_badge}
@@ -2158,10 +2231,10 @@ elif page == "Vermögenswerte":
             </div>
             """, unsafe_allow_html=True)
     
-    # Restock suggestions
+    # Nachfüllvorschläge
     st.markdown("---")
-    st.markdown("#### Restock Suggestions")
-    st.markdown("")  # Spacing
+    st.markdown("#### Nachfüllvorschläge")
+    st.markdown("")  # Abstand
     
     restock_suggestions = []
     for mat in top_5_materials:
@@ -2183,34 +2256,38 @@ elif page == "Vermögenswerte":
                     <div>
                         <div style="font-weight: 600; color: #1f2937;">{suggestion['material']}</div>
                         <div style="font-size: 0.875rem; color: #6b7280; margin-top: 0.25rem;">
-                            Current: {suggestion['current']} → Suggested: {suggestion['suggested_qty']} units
+                            Aktuell: {suggestion['current']} → Vorgeschlagen: {suggestion['suggested_qty']} Einheiten
                         </div>
                     </div>
                     <div style="font-weight: 600; color: {priority_color};">
-                        +{suggestion['suggested_qty'] - suggestion['current']} units
+                        +{suggestion['suggested_qty'] - suggestion['current']} Einheiten
                     </div>
                 </div>
             </div>
             """, unsafe_allow_html=True)
     else:
-        st.markdown(render_empty_state("📦", "No restock suggestions", "All inventory levels are adequate"), unsafe_allow_html=True)
+        st.markdown(render_empty_state("📦", "Keine Nachfüllvorschläge", "Alle Lagerbestände sind ausreichend"), unsafe_allow_html=True)
     
-    # Risk distribution chart
+    # Risikoverteilung
     st.markdown("---")
-    st.markdown("#### Risk Distribution")
-    st.markdown("")  # Spacing
-    
-    risk_counts = {'high': 0, 'medium': 0, 'low': 0}
+    st.markdown("#### Risikoverteilung")
+    st.markdown("")  # Abstand
+
+    # Deutsche Risikostufen
+    risk_counts = {'hoch': 0, 'mittel': 0, 'niedrig': 0}
     for mat in inventory_materials:
         risk_counts[mat['risk_level']] = risk_counts.get(mat['risk_level'], 0) + 1
-    
+
+    risikostufen_labels = {"hoch": "Hoch", "mittel": "Mittel", "niedrig": "Niedrig"}
+    risikostufen_farben = {"hoch": '#DC2626', "mittel": '#F59E0B', "niedrig": '#10B981'}
+
     fig_risk = px.bar(
-        x=list(risk_counts.keys()),
+        x=[risikostufen_labels[k] for k in risk_counts.keys()],
         y=list(risk_counts.values()),
         title="",
-        labels={'x': 'Risk Level', 'y': 'Count'},
-        color=list(risk_counts.keys()),
-        color_discrete_map={'high': '#DC2626', 'medium': '#F59E0B', 'low': '#10B981'}
+        labels={'x': 'Risikostufe', 'y': 'Anzahl'},
+        color=[risikostufen_labels[k] for k in risk_counts.keys()],
+        color_discrete_map={risikostufen_labels[k]: risikostufen_farben[k] for k in risk_counts.keys()}
     )
     fig_risk.update_layout(
         height=300,
@@ -2218,16 +2295,16 @@ elif page == "Vermögenswerte":
         plot_bgcolor='rgba(0,0,0,0)',
         paper_bgcolor='rgba(0,0,0,0)',
         showlegend=False,
-        xaxis_title="",
-        yaxis_title="Number of Materials"
+        xaxis_title="Risikostufe",
+        yaxis_title="Anzahl Materialien"
     )
     st.plotly_chart(fig_risk, use_container_width=True)
     
     st.markdown("---")
     
-    # Devices Risk Section
-    st.markdown("### Devices Risk")
-    st.markdown("")  # Spacing
+    # Gerätrisiko-Abschnitt
+    st.markdown("### Gerätrisiko")
+    st.markdown("")  # Abstand
     
     # Simulated devices with risk
     devices = [
@@ -2240,34 +2317,76 @@ elif page == "Vermögenswerte":
     ]
     
     # Display devices table
-    st.markdown("#### Device Maintenance Status")
-    st.markdown("")  # Spacing
+    st.markdown("#### Gerätewartungsstatus")
+    st.markdown("")  # Abstand
     
+    # Mapping for device types to German
+    device_type_map = {
+        'Imaging': 'Bildgebung',
+        'Life Support': 'Lebensunterstützung',
+        'Emergency': 'Notfall',
+        'Monitoring': 'Überwachung',
+        'Therapy': 'Therapie',
+        'Surgical': 'Chirurgisch',
+        'Diagnostic': 'Diagnostik',
+        'Other': 'Andere',
+    }
+    # Mapping for risk levels to German
+    risk_level_map = {'high': 'hoch', 'medium': 'mittel', 'low': 'niedrig', 'hoch': 'hoch', 'mittel': 'mittel', 'niedrig': 'niedrig'}
+    risk_label_map = {'hoch': 'HOHES RISIKO', 'mittel': 'MITTLERES RISIKO', 'niedrig': 'GERINGES RISIKO'}
     for device in devices:
-        risk_color = get_severity_color(device['risk_level'])
-        risk_badge = render_badge(device['risk_level'].upper(), device['risk_level'])
+        risk_level_de = risk_level_map.get(device['risk_level'], device['risk_level'])
+        risk_color = get_severity_color(risk_level_de)
+        risk_badge = render_badge(risk_label_map.get(risk_level_de, risk_level_de.upper()), risk_level_de)
+        device_type_de = device_type_map.get(device['type'], device['type'])
+        # Mapping for recommended_window to German
+        recommended_window_map = {
+            'Within 3 days': 'Innerhalb von 3 Tagen',
+            'Within 2 weeks': 'Innerhalb von 2 Wochen',
+            'Within 4 weeks': 'Innerhalb von 4 Wochen',
+            'Within 1 week': 'Innerhalb von 1 Woche',
+            'Overdue': 'Überfällig',
+            'Soon': 'Bald',
+        }
+        recommended_window_de = recommended_window_map.get(device.get('recommended_window', ''), device.get('recommended_window', ''))
+        # Mapping for department names to German
+        department_map = {
+            'Radiology': 'Radiologie',
+            'ER': 'Notaufnahme',
+            'ICU': 'Intensivstation',
+            'Cardiology': 'Kardiologie',
+            'Surgery': 'Chirurgie',
+            'General Ward': 'Allgemeinstation',
+            'Neurology': 'Neurologie',
+            'Pediatrics': 'Pädiatrie',
+            'Oncology': 'Onkologie',
+            'Orthopedics': 'Orthopädie',
+            'Maternity': 'Geburtshilfe',
+            'Other': 'Andere',
+        }
+        department_de = department_map.get(device.get('department', ''), device.get('department', ''))
         st.markdown(f"""
         <div style="background: white; padding: 1rem; border-radius: 8px; margin-bottom: 0.75rem; border-left: 4px solid {risk_color}; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
             <div style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr; gap: 1rem; align-items: center;">
                 <div>
                     <div style="font-weight: 600; color: #1f2937; margin-bottom: 0.25rem;">{device['name']}</div>
-                    <div style="font-size: 0.75rem; color: #6b7280;">{device['device_id']} • {device['department']}</div>
+                    <div style="font-size: 0.75rem; color: #6b7280;">{device['device_id']} • {department_de}</div>
                 </div>
                 <div>
-                    <div style="font-size: 0.75rem; color: #6b7280; margin-bottom: 0.25rem;">Type</div>
-                    <div style="font-weight: 600; color: #1f2937;">{device['type']}</div>
+                    <div style="font-size: 0.75rem; color: #6b7280; margin-bottom: 0.25rem;">Gerätetyp</div>
+                    <div style="font-weight: 600; color: #1f2937;">{device_type_de}</div>
                 </div>
                 <div>
-                    <div style="font-size: 0.75rem; color: #6b7280; margin-bottom: 0.25rem;">Days Until Due</div>
-                    <div style="font-weight: 600; color: {risk_color};">{device['days_until_due']} days</div>
+                    <div style="font-size: 0.75rem; color: #6b7280; margin-bottom: 0.25rem;">Tage bis fällig</div>
+                    <div style="font-weight: 600; color: {risk_color};">{device['days_until_due']} Tage</div>
                 </div>
                 <div>
-                    <div style="font-size: 0.75rem; color: #6b7280; margin-bottom: 0.25rem;">Usage Hours</div>
+                    <div style="font-size: 0.75rem; color: #6b7280; margin-bottom: 0.25rem;">Betriebsstunden</div>
                     <div style="font-weight: 600; color: #1f2937;">{device['usage_hours']:,}</div>
                 </div>
                 <div>
-                    <div style="font-size: 0.75rem; color: #6b7280; margin-bottom: 0.25rem;">Maintenance Window</div>
-                    <div style="font-weight: 600; color: #667eea; font-size: 0.875rem;">{device['recommended_window']}</div>
+                    <div style="font-size: 0.75rem; color: #6b7280; margin-bottom: 0.25rem;">Empfohlenes Wartungsfenster</div>
+                    <div style="font-weight: 600; color: #667eea; font-size: 0.875rem;">{recommended_window_de}</div>
                 </div>
                 <div>
                     {risk_badge}
@@ -2276,22 +2395,31 @@ elif page == "Vermögenswerte":
         </div>
         """, unsafe_allow_html=True)
     
-    # Device risk distribution chart
+    # Geräterisikoverteilung
     st.markdown("---")
-    st.markdown("#### Device Risk Distribution")
-    st.markdown("")  # Spacing
+    st.markdown("#### Verteilung der Geräterisiken")
+    st.markdown("")  # Abstand
     
-    device_risk_counts = {'high': 0, 'medium': 0, 'low': 0}
+    # German labels and color mapping
+    risk_map = {'hoch': 'hoch', 'mittel': 'mittel', 'niedrig': 'niedrig', 'high': 'hoch', 'medium': 'mittel', 'low': 'niedrig'}
+    label_map = {'hoch': 'Hoch', 'mittel': 'Mittel', 'niedrig': 'Niedrig'}
+    color_map = {'hoch': '#DC2626', 'mittel': '#F59E0B', 'niedrig': '#10B981'}
+    device_risk_counts = {'hoch': 0, 'mittel': 0, 'niedrig': 0}
     for device in devices:
-        device_risk_counts[device['risk_level']] = device_risk_counts.get(device['risk_level'], 0) + 1
-    
+        risk_level = risk_map.get(device['risk_level'], device['risk_level'])
+        device_risk_counts[risk_level] = device_risk_counts.get(risk_level, 0) + 1
+
+    x_labels = [label_map[k] for k in device_risk_counts.keys()]
+    colors = [label_map[k] for k in device_risk_counts.keys()]
+    color_discrete_map = {label_map[k]: color_map[k] for k in device_risk_counts.keys()}
+
     fig_device_risk = px.bar(
-        x=list(device_risk_counts.keys()),
+        x=x_labels,
         y=list(device_risk_counts.values()),
         title="",
-        labels={'x': 'Risk Level', 'y': 'Count'},
-        color=list(device_risk_counts.keys()),
-        color_discrete_map={'high': '#DC2626', 'medium': '#F59E0B', 'low': '#10B981'}
+        labels={'x': 'Risikostufe', 'y': 'Anzahl'},
+        color=colors,
+        color_discrete_map=color_discrete_map
     )
     fig_device_risk.update_layout(
         height=300,
@@ -2299,8 +2427,8 @@ elif page == "Vermögenswerte":
         plot_bgcolor='rgba(0,0,0,0)',
         paper_bgcolor='rgba(0,0,0,0)',
         showlegend=False,
-        xaxis_title="",
-        yaxis_title="Number of Devices"
+        xaxis_title="Risikostufe",
+        yaxis_title="Anzahl Geräte"
     )
     st.plotly_chart(fig_device_risk, use_container_width=True)
 
@@ -2315,39 +2443,39 @@ st.sidebar.markdown("")  # Spacing
 st.sidebar.markdown("""
 <div style="font-size: 0.75rem; color: #9ca3af; padding: 0.5rem 0; line-height: 1.6;">
     <p style="margin: 0.25rem 0;"><strong>HospitalFlow MVP v1.0</strong></p>
-    <p style="margin: 0.25rem 0;">Aggregated data only</p>
-    <p style="margin: 0.25rem 0;">No personal information</p>
+    <p style="margin: 0.25rem 0;">Nur aggregierte Daten</p>
+    <p style="margin: 0.25rem 0;">Keine personenbezogenen Daten</p>
 </div>
 """, unsafe_allow_html=True)
 
-# Professional Footer with Privacy & Ethics
+# Professioneller Footer mit Datenschutz & Ethik
 footer_timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 st.markdown(f"""
 <div class="footer">
     <div class="footer-content">
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 2.5rem; margin-bottom: 2rem;">
             <div>
-                <h4 style="color: #111827; font-size: 0.9375rem; font-weight: 700; margin-bottom: 1rem; letter-spacing: -0.01em;">Privacy</h4>
+                <h4 style="color: #111827; font-size: 0.9375rem; font-weight: 700; margin-bottom: 1rem; letter-spacing: -0.01em;">Datenschutz</h4>
                 <p style="color: #4b5563; font-size: 0.8125rem; line-height: 1.7; margin: 0;">
-                    All data displayed is aggregated and anonymized. No personal health information (PHI) or patient identifiers are stored or displayed. Data is used solely for operational insights.
+                    Alle angezeigten Daten sind aggregiert und anonymisiert. Es werden keine personenbezogenen Gesundheitsdaten (PHI) oder Patientenkennungen gespeichert oder angezeigt. Die Daten dienen ausschließlich operativen Einblicken.
                 </p>
             </div>
             <div>
-                <h4 style="color: #111827; font-size: 0.9375rem; font-weight: 700; margin-bottom: 1rem; letter-spacing: -0.01em;">Ethics</h4>
+                <h4 style="color: #111827; font-size: 0.9375rem; font-weight: 700; margin-bottom: 1rem; letter-spacing: -0.01em;">Ethik</h4>
                 <p style="color: #4b5563; font-size: 0.8125rem; line-height: 1.7; margin: 0;">
-                    AI recommendations are suggestions only. All decisions remain human-in-the-loop. Staff maintain full control over patient care decisions. System supports, never replaces, clinical judgment.
+                    KI-Empfehlungen sind lediglich Vorschläge. Alle Entscheidungen verbleiben beim Menschen. Das Personal behält die volle Kontrolle über Entscheidungen zur Patientenversorgung. Das System unterstützt, ersetzt aber niemals das klinische Urteilsvermögen.
                 </p>
             </div>
             <div>
-                <h4 style="color: #111827; font-size: 0.9375rem; font-weight: 700; margin-bottom: 1rem; letter-spacing: -0.01em;">Data Usage</h4>
+                <h4 style="color: #111827; font-size: 0.9375rem; font-weight: 700; margin-bottom: 1rem; letter-spacing: -0.01em;">Datennutzung</h4>
                 <p style="color: #4b5563; font-size: 0.8125rem; line-height: 1.7; margin: 0;">
-                    Metrics, predictions, and recommendations are based on operational data patterns. All actions are logged in the audit trail for transparency and accountability.
+                    Kennzahlen, Prognosen und Empfehlungen basieren auf Mustern operativer Daten. Alle Aktionen werden im Prüfprotokoll für Transparenz und Nachvollziehbarkeit protokolliert.
                 </p>
             </div>
         </div>
         <div style="text-align: center; padding-top: 1.5rem; border-top: 1px solid #e5e7eb;">
             <p style="color: #9ca3af; font-size: 0.75rem; margin: 0; font-weight: 500;">
-                HospitalFlow MVP v1.0 • Built for hospital operations • Last updated: {footer_timestamp}
+                HospitalFlow MVP v1.0 • Entwickelt für den Krankenhausbetrieb • Letzte Aktualisierung: {footer_timestamp}
             </p>
         </div>
     </div>
