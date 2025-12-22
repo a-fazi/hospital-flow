@@ -412,9 +412,9 @@ system_status, status_color = get_system_status()
 
 # Demo Mode toggle (in sidebar - must be early to avoid bug)
 st.sidebar.markdown("---")
-demo_mode = st.sidebar.toggle("🎬 Demo Mode", value=False, help="Increase event frequency for demonstration")
+demo_mode = st.sidebar.toggle("🎬 Demo-Modus", value=False, help="Erhöht die Ereignisfrequenz für Demonstrationszwecke")
 if demo_mode:
-    st.sidebar.info("Demo mode: Events occur more frequently")
+    st.sidebar.info("Demo-Modus: Ereignisse treten häufiger auf")
 st.sidebar.markdown("---")
 
 # Sticky Header with professional design
@@ -448,18 +448,18 @@ st.sidebar.markdown("""
 # Severity Legend (compact and professional)
 st.sidebar.markdown("""
 <div class="legend" style="margin-bottom: 1rem;">
-    <div style="font-size: 0.7rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; font-weight: 600;">Severity</div>
+    <div style="font-size: 0.7rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; font-weight: 600;">Schweregrad</div>
     <div class="legend-item">
         <span class="badge" style="background: #DC2626; color: white; width: 10px; height: 10px; padding: 0; border-radius: 50%; display: inline-block;"></span>
-        <span style="font-size: 0.75rem;">High</span>
+        <span style="font-size: 0.75rem;">Hoch</span>
     </div>
     <div class="legend-item">
         <span class="badge" style="background: #F59E0B; color: white; width: 10px; height: 10px; padding: 0; border-radius: 50%; display: inline-block;"></span>
-        <span style="font-size: 0.75rem;">Medium</span>
+        <span style="font-size: 0.75rem;">Mittel</span>
     </div>
     <div class="legend-item">
         <span class="badge" style="background: #10B981; color: white; width: 10px; height: 10px; padding: 0; border-radius: 50%; display: inline-block;"></span>
-        <span style="font-size: 0.75rem;">Low</span>
+        <span style="font-size: 0.75rem;">Niedrig</span>
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -587,7 +587,7 @@ if page == "Dashboard":
     
     # Live Status Section
     st.markdown("### Live Status")
-    st.markdown("")  # Spacing
+    st.markdown("")  # Abstand
     
     # 8 Metric Cards in 4x2 grid
     col1, col2, col3, col4 = st.columns(4)
@@ -806,7 +806,7 @@ if page == "Dashboard":
     
     # Recent alerts
     st.markdown("### Kürzliche Warnungen")
-    st.markdown("")  # Spacing
+    st.markdown("")  # Abstand
     if alerts:
         for alert in alerts[:5]:
             severity_color = get_severity_color(alert['severity'])
