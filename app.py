@@ -445,21 +445,21 @@ st.sidebar.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# Severity Legend (compact and professional)
+# Legende Schweregrad (kompakt und professionell)
 st.sidebar.markdown("""
 <div class="legend" style="margin-bottom: 1rem;">
-    <div style="font-size: 0.7rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; font-weight: 600;">Severity</div>
+    <div style="font-size: 0.7rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; font-weight: 600;">Schweregrad</div>
     <div class="legend-item">
         <span class="badge" style="background: #DC2626; color: white; width: 10px; height: 10px; padding: 0; border-radius: 50%; display: inline-block;"></span>
-        <span style="font-size: 0.75rem;">High</span>
+        <span style="font-size: 0.75rem;">Hoch</span>
     </div>
     <div class="legend-item">
         <span class="badge" style="background: #F59E0B; color: white; width: 10px; height: 10px; padding: 0; border-radius: 50%; display: inline-block;"></span>
-        <span style="font-size: 0.75rem;">Medium</span>
+        <span style="font-size: 0.75rem;">Mittel</span>
     </div>
     <div class="legend-item">
         <span class="badge" style="background: #10B981; color: white; width: 10px; height: 10px; padding: 0; border-radius: 50%; display: inline-block;"></span>
-        <span style="font-size: 0.75rem;">Low</span>
+        <span style="font-size: 0.75rem;">Niedrig</span>
     </div>
 </div>
 """, unsafe_allow_html=True)
