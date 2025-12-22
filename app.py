@@ -445,21 +445,21 @@ st.sidebar.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# Legende Schweregrad (kompakt und professionell)
+# Severity Legend (compact and professional)
 st.sidebar.markdown("""
 <div class="legend" style="margin-bottom: 1rem;">
-    <div style="font-size: 0.7rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; font-weight: 600;">Schweregrad</div>
+    <div style="font-size: 0.7rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; font-weight: 600;">Severity</div>
     <div class="legend-item">
         <span class="badge" style="background: #DC2626; color: white; width: 10px; height: 10px; padding: 0; border-radius: 50%; display: inline-block;"></span>
-        <span style="font-size: 0.75rem;">Hoch</span>
+        <span style="font-size: 0.75rem;">High</span>
     </div>
     <div class="legend-item">
         <span class="badge" style="background: #F59E0B; color: white; width: 10px; height: 10px; padding: 0; border-radius: 50%; display: inline-block;"></span>
-        <span style="font-size: 0.75rem;">Mittel</span>
+        <span style="font-size: 0.75rem;">Medium</span>
     </div>
     <div class="legend-item">
         <span class="badge" style="background: #10B981; color: white; width: 10px; height: 10px; padding: 0; border-radius: 50%; display: inline-block;"></span>
-        <span style="font-size: 0.75rem;">Niedrig</span>
+        <span style="font-size: 0.75rem;">Low</span>
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -706,7 +706,7 @@ if page == "Dashboard":
     
     with col1:
         # Charts Section
-        st.markdown("### Trends (Last 60 Minutes)")
+        st.markdown("### Trends (Letzte 60 Minuten)")
         st.markdown("")  # Spacing
         
         # Get historical data from simulation
@@ -720,13 +720,13 @@ if page == "Dashboard":
         df_ed = pd.DataFrame(ed_history)
         df_ed['timestamp'] = pd.to_datetime(df_ed['timestamp'])
         
-        # Waiting count chart
+        # Warteschlangen-Diagramm
         fig_waiting = px.line(
             df_waiting,
             x='timestamp',
             y='value',
-            title="Waiting Count",
-            labels={'value': 'Count', 'timestamp': ''}
+            title="Wartende Anzahl",
+            labels={'value': 'Anzahl', 'timestamp': ''}
         )
         fig_waiting.update_layout(
             height=250,
@@ -743,13 +743,13 @@ if page == "Dashboard":
         
         st.markdown("")  # Spacing
         
-        # ED Load chart
+        # Notaufnahme-Auslastung Diagramm
         fig_ed = px.line(
             df_ed,
             x='timestamp',
             y='value',
-            title="ED Load",
-            labels={'value': 'Load %', 'timestamp': ''}
+            title="Notaufnahme-Auslastung",
+            labels={'value': 'Auslastung %', 'timestamp': ''}
         )
         fig_ed.update_layout(
             height=250,
