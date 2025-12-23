@@ -62,6 +62,14 @@ def render(db, sim, get_cached_alerts=None, get_cached_recommendations=None, get
                 elif metric_type in ['occupancy', 'ed_load', 'or_load', 'staff_load']:
                     unit = '%'
                     value_str = f"{latest['value']:.1f} {unit}"
+                elif metric_type == 'wait_time':
+                    # Always show wait_time in minutes
+                    unit = 'Minuten'
+                    value_str = f"{latest['value']:.1f} {unit}"
+                elif metric_type == 'throughput':
+                    # Always show throughput as per hour
+                    unit = 'pro Stunde'
+                    value_str = f"{latest['value']:.1f} {unit}"
                 else:
                     unit = latest.get('unit', '')
                     unit_de = unit_map.get(unit, unit)

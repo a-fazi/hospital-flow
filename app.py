@@ -118,7 +118,8 @@ page_key = st.sidebar.radio(
 page = page_key.split(" ", 1)[1] if " " in page_key else page_key
 
 # Professioneller Seiten-Header
-page_timestamp = datetime.now().strftime('%H:%M:%S')
+from datetime import timezone
+page_timestamp = datetime.now(timezone.utc).astimezone().strftime('%H:%M:%S')
 st.markdown(f"""
 <div class="page-header">
     <h1 class="page-title">{page}</h1>
@@ -134,24 +135,24 @@ sim = st.session_state.simulation
 
 # Simulationsstatus aktualisieren (nur wenn genug Zeit vergangen ist, um Flackern zu vermeiden)
 if 'last_sim_update' not in st.session_state:
-    st.session_state.last_sim_update = datetime.now()
+    st.session_state.last_sim_update = datetime.utcnow()
 
-time_since_update = (datetime.now() - st.session_state.last_sim_update).total_seconds()
+time_since_update = (datetime.utcnow() - st.session_state.last_sim_update).total_seconds()
 if time_since_update > 2:  # Maximal alle 2 Sekunden aktualisieren
     sim.update()
-    st.session_state.last_sim_update = datetime.now()
+    st.session_state.last_sim_update = datetime.utcnow()
 
 # Auf Auslastungsereignisse prüfen (zufällige Chance, aber nicht zu häufig)
 if 'last_surge_check' not in st.session_state:
-    st.session_state.last_surge_check = datetime.now()
+    st.session_state.last_surge_check = datetime.utcnow()
 
-time_since_last_check = (datetime.now() - st.session_state.last_surge_check).total_seconds()
+time_since_last_check = (datetime.utcnow() - st.session_state.last_surge_check).total_seconds()
 # Im Demo-Modus häufiger prüfen (alle 1 Minute statt 5 Minuten)
 check_interval = 60 if demo_mode else 300
 if time_since_last_check > check_interval:
     if sim.should_trigger_surge(demo_mode=demo_mode):
         sim.trigger_surge_event(intensity=random.uniform(0.7, 1.0))
-    st.session_state.last_surge_check = datetime.now()
+    st.session_state.last_surge_check = datetime.utcnow()
 
 # Datenabruf cachen, um Flackern zu vermeiden
 @st.cache_data(ttl=5)  # Cache für 5 Sekunden
@@ -210,7 +211,7 @@ st.sidebar.markdown("""
 """, unsafe_allow_html=True)
 
 # Professioneller Footer mit Datenschutz & Ethik
-footer_timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+footer_timestamp = datetime.now(timezone.utc).astimezone().strftime('%Y-%m-%d %H:%M:%S')
 st.markdown(f"""
 <div class="footer">
     <div class="footer-content">

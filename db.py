@@ -206,18 +206,33 @@ class HospitalDB:
             return
         
         departments = ["Notaufnahme", "Intensivstation", "Chirurgie", "Kardiologie", "Allgemeinstation"]
-        now = datetime.now()
+        now = datetime.utcnow()
         
         # Metriken einfügen
         for i in range(20):
+            metric_type = random.choice(["patient_count", "wait_time", "throughput", "occupancy"])
+            # Assign proper units based on metric type
+            if metric_type == "wait_time":
+                unit = "minutes"
+                value = random.uniform(5, 30)
+            elif metric_type == "throughput":
+                unit = "per_hour"
+                value = random.uniform(10, 50)
+            elif metric_type == "patient_count":
+                unit = "count"
+                value = random.uniform(5, 50)
+            else:  # occupancy
+                unit = "percent"
+                value = random.uniform(50, 95)
+            
             cursor.execute("""
                 INSERT INTO metrics (timestamp, metric_type, value, unit, department)
                 VALUES (?, ?, ?, ?, ?)
             """, (
                 now - timedelta(minutes=random.randint(0, 60)),
-                random.choice(["patient_count", "wait_time", "throughput", "occupancy"]),
-                random.uniform(10, 100),
-                random.choice(["count", "minutes", "per_hour", "percent"]),
+                metric_type,
+                value,
+                unit,
                 random.choice(departments)
             ))
         
@@ -375,7 +390,7 @@ class HospitalDB:
         """Hole Metriken der letzten N Minuten"""
         conn = self.get_connection()
         cursor = conn.cursor()
-        cutoff_time = datetime.now() - timedelta(minutes=minutes)
+        cutoff_time = datetime.utcnow() - timedelta(minutes=minutes)
         
         if metric_type:
             cursor.execute("""
@@ -426,7 +441,7 @@ class HospitalDB:
         """Hole Warnungen innerhalb des Zeitraums"""
         conn = self.get_connection()
         cursor = conn.cursor()
-        cutoff_time = datetime.now() - timedelta(hours=hours)
+        cutoff_time = datetime.utcnow() - timedelta(hours=hours)
         cursor.execute("""
             SELECT * FROM alerts
             WHERE timestamp >= ?

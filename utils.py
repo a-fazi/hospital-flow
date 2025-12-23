@@ -35,10 +35,10 @@ def format_time_ago(timestamp: str) -> str:
     else:
         dt = timestamp
     
-    # Verwende datetime.now() für Vergleich (lokale Zeit)
-    # Da SQLite CURRENT_TIMESTAMP in UTC ist, aber als String ohne Timezone gespeichert wird,
-    # und die Simulation datetime.now() für Timestamps verwendet, bleiben wir bei lokalem Vergleich
-    now = datetime.now()
+    # SQLite CURRENT_TIMESTAMP und datetime.utcnow() geben UTC zurück
+    # Vergleiche UTC-Zeit mit UTC-Zeit für korrekte Zeitdifferenz
+    from datetime import timezone
+    now = datetime.utcnow()
     diff = now - dt
     
     if diff.total_seconds() < 60:
