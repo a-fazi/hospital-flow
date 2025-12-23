@@ -1,6 +1,6 @@
 """
-Database operations for HospitalFlow
-SQLite database with aggregated data only (no personal information)
+Datenbankoperationen für HospitalFlow
+SQLite-Datenbank mit ausschließlich aggregierten Daten (keine personenbezogenen Informationen)
 """
 import sqlite3
 import json
@@ -18,11 +18,11 @@ class HospitalDB:
         return sqlite3.connect(self.db_path)
     
     def init_db(self):
-        """Initialize database schema"""
+        """Initialisiere Datenbankschema"""
         conn = self.get_connection()
         cursor = conn.cursor()
         
-        # Metrics table (live metrics)
+        # Metriken-Tabelle (Live-Metriken)
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS metrics (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -34,7 +34,7 @@ class HospitalDB:
             )
         """)
         
-        # Predictions table
+        # Vorhersagen-Tabelle
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS predictions (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -47,7 +47,7 @@ class HospitalDB:
             )
         """)
         
-        # Alerts table
+        # Warnungen-Tabelle
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS alerts (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -61,7 +61,7 @@ class HospitalDB:
             )
         """)
         
-        # Recommendations table
+        # Empfehlungen-Tabelle
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS recommendations (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -82,7 +82,7 @@ class HospitalDB:
             )
         """)
         
-        # Migrate existing recommendations table if new columns don't exist
+        # Migriere bestehende Empfehlungen-Tabelle, falls neue Spalten nicht existieren
         try:
             cursor.execute("ALTER TABLE recommendations ADD COLUMN action TEXT")
         except:
@@ -104,7 +104,7 @@ class HospitalDB:
         except:
             pass
         
-        # Audit log
+        # Prüfprotokoll
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS audit_log (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -118,7 +118,7 @@ class HospitalDB:
             )
         """)
         
-        # Transport requests
+        # Transportanfragen
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS transport (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -133,7 +133,7 @@ class HospitalDB:
             )
         """)
         
-        # Inventory
+        # Inventar
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS inventory (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -148,7 +148,7 @@ class HospitalDB:
             )
         """)
         
-        # Device maintenance
+        # Gerätewartung
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS device_maintenance (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -164,7 +164,7 @@ class HospitalDB:
             )
         """)
         
-        # Discharge planning (aggregated)
+        # Entlassungsplanung (aggregiert)
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS discharge_planning (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -177,7 +177,7 @@ class HospitalDB:
             )
         """)
         
-        # Capacity overview
+        # Kapazitätsübersicht
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS capacity (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -195,11 +195,11 @@ class HospitalDB:
         self.seed_sample_data()
     
     def seed_sample_data(self):
-        """Seed database with sample aggregated data"""
+        """Fülle Datenbank mit Beispiel-Aggregatdaten"""
         conn = self.get_connection()
         cursor = conn.cursor()
         
-        # Check if data already exists
+        # Prüfe, ob Daten bereits existieren
         cursor.execute("SELECT COUNT(*) FROM metrics")
         if cursor.fetchone()[0] > 0:
             conn.close()
@@ -208,7 +208,7 @@ class HospitalDB:
         departments = ["Notaufnahme", "Intensivstation", "Chirurgie", "Kardiologie", "Allgemeinstation"]
         now = datetime.now()
         
-        # Seed metrics
+        # Metriken einfügen
         for i in range(20):
             cursor.execute("""
                 INSERT INTO metrics (timestamp, metric_type, value, unit, department)
@@ -221,7 +221,7 @@ class HospitalDB:
                 random.choice(departments)
             ))
         
-        # Seed predictions
+        # Vorhersagen einfügen
         for i in range(10):
             cursor.execute("""
                 INSERT INTO predictions (timestamp, prediction_type, predicted_value, confidence, time_horizon_minutes, department)
@@ -235,7 +235,7 @@ class HospitalDB:
                 random.choice(departments)
             ))
         
-        # Seed alerts
+        # Warnungen einfügen
         alerts_data = [
             ("Kapazität", "hoch", "Intensivstation-Kapazität bei 92%", "Intensivstation", 0, 0),
             ("Inventar", "mittel", "Sauerstoffflaschen unter Schwellenwert", "Notaufnahme", 0, 0),
@@ -248,7 +248,7 @@ class HospitalDB:
                 VALUES (?, ?, ?, ?, ?, ?, ?)
             """, (now - timedelta(minutes=random.randint(5, 120)), *alert))
         
-        # Seed recommendations with new template format
+        # Empfehlungen mit neuem Template-Format einfügen
         recs_data = [
             (
                 "capacity", 
@@ -294,7 +294,7 @@ class HospitalDB:
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (now - timedelta(minutes=random.randint(10, 180)), rec_type, title, description, priority, department, "pending", action, reason, expected_impact, safety_note, explanation_score))
         
-        # Seed transport
+        # Transport einfügen
         transport_data = [
             ("Patient", "Notaufnahme", "Intensivstation", "hoch", "in_bearbeitung", 10, None),
             ("Ausrüstung", "Lager", "Chirurgie", "mittel", "ausstehend", 15, None),
@@ -306,7 +306,7 @@ class HospitalDB:
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """, (now - timedelta(minutes=random.randint(5, 60)), *trans))
         
-        # Seed inventory
+        # Inventar einfügen
         inventory_items = [
             ("Sauerstoffflaschen", "Medizinische Gase", 15, 20, 100, "Notaufnahme", "Einheiten"),
             ("Infusionslösungen", "Versorgung", 45, 30, 200, "Intensivstation", "Einheiten"),
@@ -319,7 +319,7 @@ class HospitalDB:
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """, (now, *item))
         
-        # Seed device maintenance
+        # Gerätewartung einfügen
         devices = [
             ("V-203", "Beatmungsgerät", "Intensivstation", "hoch", "2024-01-15", "2024-02-15", 3200, "in_betrieb"),
             ("M-501", "Monitor", "Notaufnahme", "mittel", "2024-01-20", "2024-03-20", 2400, "in_betrieb"),
@@ -331,7 +331,7 @@ class HospitalDB:
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (now, *device))
         
-        # Seed discharge planning
+        # Entlassungsplanung einfügen
         for dept in departments:
             cursor.execute("""
                 INSERT INTO discharge_planning (timestamp, department, ready_for_discharge_count, pending_discharge_count, avg_length_of_stay_hours, discharge_capacity_utilization)
@@ -345,7 +345,7 @@ class HospitalDB:
                 random.uniform(0.3, 0.9)
             ))
         
-        # Seed capacity
+        # Kapazität einfügen
         for dept in departments:
             total = random.randint(20, 50)
             occupied = random.randint(10, total - 5)
@@ -359,7 +359,7 @@ class HospitalDB:
         conn.close()
     
     def get_recent_metrics(self, limit: int = 10) -> List[Dict]:
-        """Get recent metrics"""
+        """Hole aktuelle Metriken"""
         conn = self.get_connection()
         cursor = conn.cursor()
         cursor.execute("""
@@ -372,7 +372,7 @@ class HospitalDB:
         return [dict(zip([col[0] for col in cursor.description], row)) for row in rows]
     
     def get_metrics_last_n_minutes(self, minutes: int = 60, metric_type: Optional[str] = None) -> List[Dict]:
-        """Get metrics from the last N minutes"""
+        """Hole Metriken der letzten N Minuten"""
         conn = self.get_connection()
         cursor = conn.cursor()
         cutoff_time = datetime.now() - timedelta(minutes=minutes)
@@ -395,7 +395,7 @@ class HospitalDB:
         return [dict(zip([col[0] for col in cursor.description], row)) for row in rows]
     
     def get_predictions(self, minutes_ahead: int = 15) -> List[Dict]:
-        """Get predictions for next N minutes"""
+        """Hole Vorhersagen für die nächsten N Minuten"""
         conn = self.get_connection()
         cursor = conn.cursor()
         cursor.execute("""
@@ -408,7 +408,7 @@ class HospitalDB:
         return [dict(zip([col[0] for col in cursor.description], row)) for row in rows]
     
     def get_active_alerts(self) -> List[Dict]:
-        """Get unacknowledged alerts"""
+        """Hole nicht bestätigte Warnungen"""
         conn = self.get_connection()
         cursor = conn.cursor()
         cursor.execute("""
@@ -423,7 +423,7 @@ class HospitalDB:
         return [dict(zip([col[0] for col in cursor.description], row)) for row in rows]
     
     def get_alerts_by_time_range(self, hours: int = 24) -> List[Dict]:
-        """Get alerts within time range"""
+        """Hole Warnungen innerhalb des Zeitraums"""
         conn = self.get_connection()
         cursor = conn.cursor()
         cutoff_time = datetime.now() - timedelta(hours=hours)
@@ -439,7 +439,7 @@ class HospitalDB:
         return [dict(zip([col[0] for col in cursor.description], row)) for row in rows]
     
     def get_pending_recommendations(self) -> List[Dict]:
-        """Get pending recommendations"""
+        """Hole ausstehende Empfehlungen"""
         conn = self.get_connection()
         cursor = conn.cursor()
         cursor.execute("""
@@ -454,7 +454,7 @@ class HospitalDB:
         return [dict(zip([col[0] for col in cursor.description], row)) for row in rows]
     
     def get_recommendations_by_role(self, role: str = "all") -> List[Dict]:
-        """Get recommendations filtered by role (all, nurse, doctor, manager)"""
+        """Hole Empfehlungen gefiltert nach Rolle (all, nurse, doctor, manager)"""
         conn = self.get_connection()
         cursor = conn.cursor()
         if role == "all":
@@ -466,8 +466,8 @@ class HospitalDB:
                     timestamp DESC
             """)
         else:
-            # In a real app, recommendations would have a role field
-            # For MVP, we'll filter by rec_type or department
+            # In einer echten App hätten Empfehlungen ein Rollenfeld
+            # Für MVP filtern wir nach rec_type oder Abteilung
             cursor.execute("""
                 SELECT * FROM recommendations
                 WHERE status = 'pending'
@@ -480,7 +480,7 @@ class HospitalDB:
         return [dict(zip([col[0] for col in cursor.description], row)) for row in rows]
     
     def accept_recommendation(self, rec_id: int, action_taken: str):
-        """Accept a recommendation"""
+        """Akzeptiere eine Empfehlung"""
         conn = self.get_connection()
         cursor = conn.cursor()
         cursor.execute("""
@@ -495,7 +495,7 @@ class HospitalDB:
         conn.close()
     
     def reject_recommendation(self, rec_id: int, reason: str):
-        """Reject a recommendation"""
+        """Lehne eine Empfehlung ab"""
         conn = self.get_connection()
         cursor = conn.cursor()
         cursor.execute("""
@@ -510,7 +510,7 @@ class HospitalDB:
         conn.close()
     
     def acknowledge_alert(self, alert_id: int):
-        """Acknowledge an alert"""
+        """Bestätige eine Warnung"""
         conn = self.get_connection()
         cursor = conn.cursor()
         cursor.execute("""
@@ -523,7 +523,7 @@ class HospitalDB:
         conn.close()
     
     def get_transport_requests(self, status: Optional[str] = None) -> List[Dict]:
-        """Get transport requests"""
+        """Hole Transportanfragen"""
         conn = self.get_connection()
         cursor = conn.cursor()
         if status:
@@ -546,7 +546,7 @@ class HospitalDB:
         return [dict(zip([col[0] for col in cursor.description], row)) for row in rows]
     
     def get_inventory_status(self) -> List[Dict]:
-        """Get inventory status"""
+        """Hole Inventarstatus"""
         conn = self.get_connection()
         cursor = conn.cursor()
         cursor.execute("""
@@ -560,7 +560,7 @@ class HospitalDB:
         return [dict(zip([col[0] for col in cursor.description], row)) for row in rows]
     
     def get_device_maintenance_risks(self) -> List[Dict]:
-        """Get device maintenance risks"""
+        """Hole Gerätewartungsrisiken"""
         conn = self.get_connection()
         cursor = conn.cursor()
         cursor.execute("""
@@ -574,7 +574,7 @@ class HospitalDB:
         return [dict(zip([col[0] for col in cursor.description], row)) for row in rows]
     
     def get_discharge_planning(self) -> List[Dict]:
-        """Get discharge planning aggregated data"""
+        """Hole aggregierte Entlassungsplanungsdaten"""
         conn = self.get_connection()
         cursor = conn.cursor()
         cursor.execute("""
@@ -586,7 +586,7 @@ class HospitalDB:
         return [dict(zip([col[0] for col in cursor.description], row)) for row in rows]
     
     def get_capacity_overview(self) -> List[Dict]:
-        """Get capacity overview"""
+        """Hole Kapazitätsübersicht"""
         conn = self.get_connection()
         cursor = conn.cursor()
         cursor.execute("""
@@ -598,7 +598,7 @@ class HospitalDB:
         return [dict(zip([col[0] for col in cursor.description], row)) for row in rows]
     
     def get_audit_log(self, limit: int = 50) -> List[Dict]:
-        """Get audit log"""
+        """Hole Prüfprotokoll"""
         conn = self.get_connection()
         cursor = conn.cursor()
         cursor.execute("""
@@ -611,7 +611,7 @@ class HospitalDB:
         return [dict(zip([col[0] for col in cursor.description], row)) for row in rows]
     
     def log_audit(self, action_type: str, user_role: str, entity_type: str, entity_id: int, details: str):
-        """Log an audit event"""
+        """Protokolliere ein Prüfereignis"""
         conn = self.get_connection()
         cursor = conn.cursor()
         cursor.execute("""

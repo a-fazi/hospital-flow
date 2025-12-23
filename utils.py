@@ -1,6 +1,6 @@
 """
-Utility functions for HospitalFlow
-Predictions, calculations, and formatting helpers
+Hilfsfunktionen für HospitalFlow
+Vorhersagen, Berechnungen und Formatierungshelfer
 """
 from datetime import datetime, timedelta
 from typing import Dict, List
@@ -242,7 +242,7 @@ def get_metric_severity_for_load(load_percent: float) -> tuple[str, str]:
 
 
 def get_metric_severity_for_count(count: int, thresholds: dict) -> tuple[str, str]:
-    """Get severity for count-based metrics"""
+    """Ermittle Schweregrad für zählbasierte Metriken"""
     if count >= thresholds.get('critical', 20):
         return 'high', 'Kritisch'
     elif count >= thresholds.get('watch', 10):
@@ -252,7 +252,7 @@ def get_metric_severity_for_count(count: int, thresholds: dict) -> tuple[str, st
 
 
 def get_metric_severity_for_free(free: int, total: int) -> tuple[str, str]:
-    """Get severity for free/available metrics (lower is worse)"""
+    """Ermittle Schweregrad für freie/verfügbare Metriken (niedriger ist schlechter)"""
     if total == 0:
         return 'high', 'Kritisch'
     free_percent = (free / total) * 100
