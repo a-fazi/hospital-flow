@@ -35,10 +35,10 @@ def format_time_ago(timestamp: str) -> str:
     else:
         dt = timestamp
     
-    # SQLite CURRENT_TIMESTAMP und datetime.utcnow() geben UTC zurück
+    # SQLite CURRENT_TIMESTAMP und datetime.now(timezone.utc) geben UTC zurück
     # Vergleiche UTC-Zeit mit UTC-Zeit für korrekte Zeitdifferenz
     from datetime import timezone
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc).replace(tzinfo=None)  # Remove timezone info for comparison with naive dt
     diff = now - dt
     
     if diff.total_seconds() < 60:

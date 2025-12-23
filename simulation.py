@@ -3,7 +3,7 @@ Simulations-Engine für HospitalFlow
 Stellt korrelierte Signale, Ereignisse und realistisches Verhalten bereit
 """
 import random
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional
 import math
 
@@ -31,11 +31,11 @@ class HospitalSimulation:
         
         self.active_events = []  # List of active surge events
         self.recommendation_effects = {}  # Track active recommendation effects
-        self.last_update = datetime.utcnow()
+        self.last_update = datetime.now(timezone.utc)
     
     def update(self, minutes_passed: int = 1):
         """Simulationsstatus basierend auf vergangener Zeit aktualisieren"""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         
         # Remove expired events
         self.active_events = [
@@ -115,7 +115,7 @@ class HospitalSimulation:
         """Aktive Auslastungsereignisse anwenden"""
         for event in self.active_events:
             intensity = event['intensity']
-            elapsed = (datetime.utcnow() - event['start_time']).total_seconds() / 60
+            elapsed = (datetime.now(timezone.utc) - event['start_time']).total_seconds() / 60
             
             # Event effect decreases over time
             decay = 1.0 - (elapsed / event['duration_minutes'])
@@ -129,7 +129,7 @@ class HospitalSimulation:
     def _apply_recommendation_effects(self):
         """Effekte aus akzeptierten Empfehlungen anwenden"""
         for effect_name, effect in self.recommendation_effects.items():
-            elapsed = (datetime.utcnow() - effect['start_time']).total_seconds() / 60
+            elapsed = (datetime.now(timezone.utc) - effect['start_time']).total_seconds() / 60
             remaining = max(0, effect['duration_minutes'] - elapsed)
             
             if remaining > 0:
@@ -178,7 +178,7 @@ class HospitalSimulation:
             duration_minutes = random.randint(10, 20)
         
         event = {
-            'start_time': datetime.utcnow(),
+            'start_time': datetime.now(timezone.utc),
             'duration_minutes': duration_minutes,
             'intensity': intensity,
             'type': 'surge'
@@ -196,7 +196,7 @@ class HospitalSimulation:
     def apply_recommendation_effect(self, rec_type: str, effect_name: str, duration_minutes: int = 30):
         """Effekt aus akzeptierter Empfehlung anwenden"""
         self.recommendation_effects[effect_name] = {
-            'start_time': datetime.utcnow(),
+            'start_time': datetime.now(timezone.utc),
             'duration_minutes': duration_minutes,
             'rec_type': rec_type
         }
@@ -210,7 +210,7 @@ class HospitalSimulation:
         """Historische Werte für eine Metrik (simuliert) abrufen"""
         # For MVP, generate realistic historical data based on current state
         history = []
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         current_value = self.state.get(metric_name, 0)
         
         # Generate trend-based history

@@ -4,7 +4,7 @@ SQLite-Datenbank mit ausschließlich aggregierten Daten (keine personenbezogenen
 """
 import sqlite3
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List, Dict, Optional
 import random
 
@@ -206,7 +206,7 @@ class HospitalDB:
             return
         
         departments = ["Notaufnahme", "Intensivstation", "Chirurgie", "Kardiologie", "Allgemeinstation"]
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
         
         # Metriken einfügen
         for i in range(20):
@@ -390,7 +390,7 @@ class HospitalDB:
         """Hole Metriken der letzten N Minuten"""
         conn = self.get_connection()
         cursor = conn.cursor()
-        cutoff_time = datetime.utcnow() - timedelta(minutes=minutes)
+        cutoff_time = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(minutes=minutes)
         
         if metric_type:
             cursor.execute("""
@@ -441,7 +441,7 @@ class HospitalDB:
         """Hole Warnungen innerhalb des Zeitraums"""
         conn = self.get_connection()
         cursor = conn.cursor()
-        cutoff_time = datetime.utcnow() - timedelta(hours=hours)
+        cutoff_time = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=hours)
         cursor.execute("""
             SELECT * FROM alerts
             WHERE timestamp >= ?

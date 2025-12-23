@@ -135,24 +135,24 @@ sim = st.session_state.simulation
 
 # Simulationsstatus aktualisieren (nur wenn genug Zeit vergangen ist, um Flackern zu vermeiden)
 if 'last_sim_update' not in st.session_state:
-    st.session_state.last_sim_update = datetime.utcnow()
+    st.session_state.last_sim_update = datetime.now(timezone.utc)
 
-time_since_update = (datetime.utcnow() - st.session_state.last_sim_update).total_seconds()
+time_since_update = (datetime.now(timezone.utc) - st.session_state.last_sim_update).total_seconds()
 if time_since_update > 2:  # Maximal alle 2 Sekunden aktualisieren
     sim.update()
-    st.session_state.last_sim_update = datetime.utcnow()
+    st.session_state.last_sim_update = datetime.now(timezone.utc)
 
 # Auf Auslastungsereignisse prüfen (zufällige Chance, aber nicht zu häufig)
 if 'last_surge_check' not in st.session_state:
-    st.session_state.last_surge_check = datetime.utcnow()
+    st.session_state.last_surge_check = datetime.now(timezone.utc)
 
-time_since_last_check = (datetime.utcnow() - st.session_state.last_surge_check).total_seconds()
+time_since_last_check = (datetime.now(timezone.utc) - st.session_state.last_surge_check).total_seconds()
 # Im Demo-Modus häufiger prüfen (alle 1 Minute statt 5 Minuten)
 check_interval = 60 if demo_mode else 300
 if time_since_last_check > check_interval:
     if sim.should_trigger_surge(demo_mode=demo_mode):
         sim.trigger_surge_event(intensity=random.uniform(0.7, 1.0))
-    st.session_state.last_surge_check = datetime.utcnow()
+    st.session_state.last_surge_check = datetime.now(timezone.utc)
 
 # Datenabruf cachen, um Flackern zu vermeiden
 @st.cache_data(ttl=5)  # Cache für 5 Sekunden

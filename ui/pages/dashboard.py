@@ -72,7 +72,8 @@ def render(db, sim, get_cached_alerts=None, get_cached_recommendations=None, get
     active_surges = [e for e in sim.active_events if e['type'] == 'surge']
     if active_surges:
         surge = active_surges[0]
-        elapsed = (datetime.utcnow() - surge['start_time']).total_seconds() / 60
+        from datetime import timezone
+        elapsed = (datetime.now(timezone.utc) - surge['start_time']).total_seconds() / 60
         remaining = max(0, surge['duration_minutes'] - elapsed)
         st.warning(f"⚠️ **Aktives Auslastungsereignis**: Noch {remaining:.0f} Minuten verbleibend (Intensität: {surge['intensity']:.1f})")
         st.markdown("")  # Spacing

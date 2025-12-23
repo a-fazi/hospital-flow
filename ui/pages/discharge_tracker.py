@@ -20,7 +20,8 @@ from ui.components import render_badge, render_empty_state
 def render(db, sim, get_cached_alerts=None, get_cached_recommendations=None, get_cached_capacity=None):
     """Rendert die Entlassung-Seite"""
     # Erwartete Entlassungen simulieren
-    jetzt = datetime.utcnow()
+    from datetime import timezone
+    jetzt = datetime.now(timezone.utc)
 
     # Erwartete Entlassungen für die nächsten 12 Stunden (stündliche Intervalle) generieren
     stündliche_entlassungen = []
