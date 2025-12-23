@@ -22,11 +22,15 @@ def format_time_ago(timestamp: str) -> str:
             dt = datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
         except:
             try:
-                # Versuche SQLite-Datumsformat
-                dt = datetime.strptime(timestamp, '%Y-%m-%d %H:%M:%S')
+                # Versuche SQLite-Datumsformat mit Mikrosekunden
+                dt = datetime.strptime(timestamp, '%Y-%m-%d %H:%M:%S.%f')
             except:
-                # Fallback auf "kürzlich", wenn das Parsen fehlschlägt
-                return "kürzlich"
+                try:
+                    # Versuche SQLite-Datumsformat ohne Mikrosekunden
+                    dt = datetime.strptime(timestamp, '%Y-%m-%d %H:%M:%S')
+                except:
+                    # Fallback auf "kürzlich", wenn das Parsen fehlschlägt
+                    return "kürzlich"
     else:
         dt = timestamp
     
