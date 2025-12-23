@@ -5,9 +5,10 @@ Moderne Streamlit-Anwendung für Krankenhauspersonal mit Live-Metriken, Vorhersa
 import streamlit as st
 import plotly.express as px
 import plotly.graph_objects as go
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import pandas as pd
 import random
+from zoneinfo import ZoneInfo
 from db import HospitalDB
 from utils import (
     format_time_ago, get_severity_color, get_priority_color, get_risk_color,
@@ -19,6 +20,16 @@ from utils import (
 from simulation import get_simulation
 from ui.styling import apply_custom_styles
 from ui.components import render_badge, render_empty_state
+
+# ===== TIMEZONE CONFIGURATION =====
+# Set your local timezone here (e.g., 'Europe/Berlin', 'Europe/Vienna', 'America/New_York', 'Asia/Tokyo')
+# For Central European Time (CET/CEST), use 'Europe/Berlin' or 'Europe/Zurich'
+LOCAL_TIMEZONE = 'Europe/Berlin'  # Change this to your timezone
+
+def get_local_time():
+    """Get current time in configured local timezone"""
+    return datetime.now(timezone.utc).astimezone(ZoneInfo(LOCAL_TIMEZONE))
+# ===================================
 
 # Seitenkonfiguration
 st.set_page_config(
@@ -118,8 +129,7 @@ page_key = st.sidebar.radio(
 page = page_key.split(" ", 1)[1] if " " in page_key else page_key
 
 # Professioneller Seiten-Header
-from datetime import timezone
-page_timestamp = datetime.now(timezone.utc).astimezone().strftime('%H:%M:%S')
+page_timestamp = get_local_time().strftime('%H:%M:%S')
 st.markdown(f"""
 <div class="page-header">
     <h1 class="page-title">{page}</h1>
@@ -211,7 +221,7 @@ st.sidebar.markdown("""
 """, unsafe_allow_html=True)
 
 # Professioneller Footer mit Datenschutz & Ethik
-footer_timestamp = datetime.now(timezone.utc).astimezone().strftime('%Y-%m-%d %H:%M:%S')
+footer_timestamp = get_local_time().strftime('%Y-%m-%d %H:%M:%S')
 st.markdown(f"""
 <div class="footer">
     <div class="footer-content">
