@@ -23,6 +23,7 @@ def format_time_ago(timestamp: str) -> str:
         except:
             try:
                 # Versuche SQLite-Datumsformat mit Mikrosekunden
+                # SQLite CURRENT_TIMESTAMP gibt UTC zurück, also als UTC behandeln
                 dt = datetime.strptime(timestamp, '%Y-%m-%d %H:%M:%S.%f')
             except:
                 try:
@@ -34,6 +35,9 @@ def format_time_ago(timestamp: str) -> str:
     else:
         dt = timestamp
     
+    # Verwende datetime.now() für Vergleich (lokale Zeit)
+    # Da SQLite CURRENT_TIMESTAMP in UTC ist, aber als String ohne Timezone gespeichert wird,
+    # und die Simulation datetime.now() für Timestamps verwendet, bleiben wir bei lokalem Vergleich
     now = datetime.now()
     diff = now - dt
     
