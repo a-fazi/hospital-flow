@@ -42,6 +42,14 @@ def render(db, sim, get_cached_alerts=None, get_cached_recommendations=None, get
         # Gruppieren nach Metrik-Typ
         metric_types = df['metric_type'].unique()
         cols = st.columns(3)
+        # Unit translation
+        unit_map = {
+            'minutes': 'Minuten',
+            'hours': 'Stunden',
+            'patients': 'Patienten',
+            'beds': 'Betten',
+            'rooms': 'Räume'
+        }
         for idx, metric_type in enumerate(metric_types[:6]):
             col_idx = idx % 3
             with cols[col_idx]:
@@ -56,7 +64,8 @@ def render(db, sim, get_cached_alerts=None, get_cached_recommendations=None, get
                     value_str = f"{latest['value']:.1f} {unit}"
                 else:
                     unit = latest.get('unit', '')
-                    value_str = f"{latest['value']:.1f} {unit}"
+                    unit_de = unit_map.get(unit, unit)
+                    value_str = f"{latest['value']:.1f} {unit_de}" if unit_de else f"{latest['value']:.1f}"
                 st.metric(
                     label,
                     value_str,

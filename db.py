@@ -491,7 +491,10 @@ class HospitalDB:
             WHERE id = ?
         """, (action_taken, rec_id))
         conn.commit()
-        self.log_audit("recommendation_accepted", "staff", "recommendation", rec_id, f"Action: {action_taken}")
+        # Randomize role for demo purposes
+        roles = ['nurse', 'doctor', 'admin', 'manager']
+        role = random.choice(roles)
+        self.log_audit("recommendation_accepted", role, "recommendation", rec_id, f"Action: {action_taken}")
         conn.close()
     
     def reject_recommendation(self, rec_id: int, reason: str):
@@ -506,7 +509,10 @@ class HospitalDB:
             WHERE id = ?
         """, (reason, rec_id))
         conn.commit()
-        self.log_audit("recommendation_rejected", "staff", "recommendation", rec_id, f"Reason: {reason}")
+        # Randomize role for demo purposes
+        roles = ['nurse', 'doctor', 'admin', 'manager']
+        role = random.choice(roles)
+        self.log_audit("recommendation_rejected", role, "recommendation", rec_id, f"Reason: {reason}")
         conn.close()
     
     def acknowledge_alert(self, alert_id: int):
@@ -516,7 +522,10 @@ class HospitalDB:
         cursor.execute("""
             UPDATE alerts
             SET acknowledged = 1
-            WHERE id = ?
+        # Randomize role for demo purposes
+        roles = ['nurse', 'doctor', 'admin', 'manager']
+        role = random.choice(roles)
+        self.log_audit("alert_acknowledged", role
         """, (alert_id,))
         conn.commit()
         self.log_audit("alert_acknowledged", "staff", "alert", alert_id, "")

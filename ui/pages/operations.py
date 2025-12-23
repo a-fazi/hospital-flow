@@ -127,25 +127,25 @@ def render(db, sim, get_cached_alerts=None, get_cached_recommendations=None, get
                 col1, col2 = st.columns([5, 1])
                 with col1:
                     pred_text = f" • Prognose: {predicted_minutes} Min." if predicted_minutes else ""
-                    st.markdown(f"""
-                    <div style="background: white; padding: 1rem; border-radius: 8px; margin-bottom: 0.75rem; border-left: 4px solid {severity_color}; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                    pred_html = f'<span style="font-size: 0.75rem; color: #667eea;">{pred_text}</span>' if predicted_minutes else ''
+                    
+                    st.html(f"""<div style="background: white; padding: 1rem; border-radius: 8px; margin-bottom: 0.75rem; border-left: 4px solid {severity_color}; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
                         <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
                             {badge_html}
                             <span style="font-size: 0.75rem; color: #6b7280; font-weight: 500;">{dept_de}</span>
                             <span style="font-size: 0.75rem; color: #9ca3af;">•</span>
                             <span style="font-size: 0.75rem; color: #6b7280;">{format_time_ago(alert['timestamp'])}</span>
-                            {f'<span style=\"font-size: 0.75rem; color: #667eea;\">{pred_text}</span>' if predicted_minutes else ''}
+                            {pred_html}
                         </div>
                         <div style="font-weight: 600; color: #1f2937; font-size: 0.95rem;">
                             {alert['message']}
                         </div>
-                    </div>
-                    """, unsafe_allow_html=True)
+                    </div>""")
                 with col2:
+                    st.markdown("<div style='height: 1rem;'></div>", unsafe_allow_html=True)
                     if st.button("Bestätigen", key=f"ops_ack_{alert['id']}", use_container_width=True):
                         db.acknowledge_alert(alert['id'])
                         st.success("✅ Warnung bestätigt")
-                        st.rerun()
         else:
             st.markdown("""
             <div class="empty-state">
@@ -160,23 +160,8 @@ def render(db, sim, get_cached_alerts=None, get_cached_recommendations=None, get
         st.markdown("### Empfehlungen")
         st.markdown("")  # Abstand
         
-        # Rollen-Auswahl oben angeheftet
-        selected_role = st.radio(
-            "Rolle",
-            ["Alle", "Pflegekraft", "Arzt/Ärztin", "Leitung"],
-            horizontal=True,
-            key="ops_rec_role"
-        )
-        
-        st.markdown("")  # Spacing
-        
         # Empfehlungen abrufen
         recommendations = db.get_pending_recommendations()
-        
-        # Nach Rolle filtern (in echter App würde nach tatsächlichem Rollenfeld gefiltert)
-        if selected_role != "Alle":
-            # For MVP, we'll show all but could filter by rec_type or department
-            pass
         
         # German translation for explanation_score (trust level)
         vertrauen_map = {'high': 'hoch', 'medium': 'mittel', 'low': 'niedrig'}
@@ -207,6 +192,9 @@ def render(db, sim, get_cached_alerts=None, get_cached_recommendations=None, get
                 has_new_format = rec.get('action') and rec.get('reason')
 
                 if has_new_format:
+                    # Build impact tags HTML
+                    impact_tags_html = ' '.join([f'<span class="badge" style="background: #e5e7eb; color: #4b5563;">{tag}</span>' for tag in impact_tags])
+                    
                     st.markdown(f"""
                     <div style="background: white; padding: 1.5rem; border-radius: 8px; margin-bottom: 1rem; border-left: 4px solid {priority_color}; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
                         <div style="margin-bottom: 1rem;">
@@ -230,15 +218,16 @@ def render(db, sim, get_cached_alerts=None, get_cached_recommendations=None, get
                                 <strong style="color: #1f2937; font-size: 0.875rem;">Sicherheits-Hinweis:</strong>
                                 <p style="margin: 0.25rem 0 0 0; color: #4b5563; line-height: 1.6;">{rec.get('safety_note', 'N/A')}</p>
                             </div>
-
                         </div>
                         <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                            {' '.join([f'<span class="badge" style="background: #e5e7eb; color: #4b5563;">{tag}</span>' for tag in impact_tags])}
+                            {impact_tags_html}
                         </div>
                     </div>
                     """, unsafe_allow_html=True)
                 else:
                     # Fallback to old format
+                    impact_tags_html = ' '.join([f'<span class="badge" style="background: #e5e7eb; color: #4b5563;">{tag}</span>' for tag in impact_tags])
+                    
                     st.markdown(f"""
                     <div style="background: white; padding: 1.5rem; border-radius: 8px; margin-bottom: 1rem; border-left: 4px solid {priority_color}; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
                         <div style="display: flex; align-items: start; gap: 0.75rem; margin-bottom: 1rem;">
@@ -249,7 +238,7 @@ def render(db, sim, get_cached_alerts=None, get_cached_recommendations=None, get
                             </div>
                         </div>
                         <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem;">
-                            {' '.join([f'<span class="badge" style="background: #e5e7eb; color: #4b5563;">{tag}</span>' for tag in impact_tags])}
+                            {impact_tags_html}
                         </div>
                     </div>
                     """, unsafe_allow_html=True)
@@ -280,7 +269,7 @@ def render(db, sim, get_cached_alerts=None, get_cached_recommendations=None, get
                     """, unsafe_allow_html=True)
                 
                 # Annehmen/Ablehnen-Buttons
-                col1, col2 = st.columns([3, 1])
+                col1, col2, col3 = st.columns([4, 1, 1])
                 with col1:
                     action_text = st.text_input(
                         "Maßnahme / Begründung",
@@ -288,33 +277,33 @@ def render(db, sim, get_cached_alerts=None, get_cached_recommendations=None, get
                         placeholder="Bitte ergreifende Maßnahme oder Ablehnungsgrund eingeben"
                     )
                 with col2:
-                    col_accept, col_reject = st.columns(2)
-                    with col_accept:
-                        accept_clicked = st.button("✅ Annehmen", key=f"ops_accept_{rec['id']}", use_container_width=True, type="primary")
-                        if accept_clicked:
-                            if action_text:
-                                db.accept_recommendation(rec['id'], action_text)
-                                # Simulationseffekt basierend auf Empfehlungstyp anwenden
-                                rec_type = rec.get('rec_type', '')
-                                if 'staffing' in rec_type.lower() or 'reassign' in rec.get('action', '').lower():
-                                    sim.apply_recommendation_effect(rec_type, 'staffing_reassignment', duration_minutes=30)
-                                elif 'capacity' in rec_type.lower() or 'overflow' in rec.get('action', '').lower() or 'bed' in rec.get('action', '').lower():
-                                    sim.apply_recommendation_effect(rec_type, 'open_overflow_beds', duration_minutes=45)
-                                elif 'room' in rec_type.lower() or 'room' in rec.get('action', '').lower():
-                                    sim.apply_recommendation_effect(rec_type, 'room_allocation', duration_minutes=30)
-                                st.success("✅ Empfehlung angenommen")
-                                st.rerun()
-                            else:
-                                st.warning("⚠️ Bitte Maßnahme eingeben")
-                    with col_reject:
-                        reject_clicked = st.button("❌ Ablehnen", key=f"ops_reject_{rec['id']}", use_container_width=True)
-                        if reject_clicked:
-                            if action_text:
-                                db.reject_recommendation(rec['id'], action_text)
-                                st.info("❌ Empfehlung abgelehnt")
-                                st.rerun()
-                            else:
-                                st.warning("⚠️ Bitte Ablehnungsgrund eingeben")
+                    st.markdown("<div style='height: 1.5rem;'></div>", unsafe_allow_html=True)
+                    accept_clicked = st.button("✅ Annehmen", key=f"ops_accept_{rec['id']}", use_container_width=True)
+                    if accept_clicked:
+                        if action_text:
+                            db.accept_recommendation(rec['id'], action_text)
+                            # Simulationseffekt basierend auf Empfehlungstyp anwenden
+                            rec_type = rec.get('rec_type', '')
+                            if 'staffing' in rec_type.lower() or 'reassign' in rec.get('action', '').lower():
+                                sim.apply_recommendation_effect(rec_type, 'staffing_reassignment', duration_minutes=30)
+                            elif 'capacity' in rec_type.lower() or 'overflow' in rec.get('action', '').lower() or 'bed' in rec.get('action', '').lower():
+                                sim.apply_recommendation_effect(rec_type, 'open_overflow_beds', duration_minutes=45)
+                            elif 'room' in rec_type.lower() or 'room' in rec.get('action', '').lower():
+                                sim.apply_recommendation_effect(rec_type, 'room_allocation', duration_minutes=30)
+                            st.success("✅ Empfehlung angenommen")
+                            st.rerun()
+                        else:
+                            st.warning("⚠️ Bitte Maßnahme eingeben")
+                with col3:
+                    st.markdown("<div style='height: 1.5rem;'></div>", unsafe_allow_html=True)
+                    reject_clicked = st.button("❌ Ablehnen", key=f"ops_reject_{rec['id']}", use_container_width=True)
+                    if reject_clicked:
+                        if action_text:
+                            db.reject_recommendation(rec['id'], action_text)
+                            st.info("❌ Empfehlung abgelehnt")
+                            st.rerun()
+                        else:
+                            st.warning("⚠️ Bitte Ablehnungsgrund eingeben")
                 
                 st.markdown("---")
         else:
@@ -330,46 +319,169 @@ def render(db, sim, get_cached_alerts=None, get_cached_recommendations=None, get
     with tab3:
         st.markdown("### Prüfprotokoll")
         st.markdown("")  # Abstand
+        
+        # Refresh button to clear old data
+        col_btn1, col_btn2 = st.columns([1, 5])
+        with col_btn1:
+            if st.button("🔄 Aktualisieren", use_container_width=True):
+                # Delete all audit log entries
+                conn = db.get_connection()
+                cursor = conn.cursor()
+                cursor.execute("DELETE FROM audit_log")
+                deleted_count = cursor.rowcount
+                conn.commit()
+                conn.close()
+                if deleted_count > 0:
+                    st.success(f"✅ {deleted_count} Einträge gelöscht")
+                st.rerun()
+        
+        st.markdown("")  # Abstand
 
         # Filter
         audit_log = db.get_audit_log(100)
+        
+        # Translation maps for dropdowns
+        role_map_filter = {
+            'system': 'System',
+            'nurse': 'Pflegekraft',
+            'doctor': 'Arzt/Ärztin',
+            'admin': 'Leitung',
+            'manager': 'Manager',
+            'staff': 'Personal',
+            'user': 'Benutzer',
+        }
+        action_map_filter = {
+            'alert_acknowledged': 'Warnung bestätigt',
+            'recommendation_accepted': 'Empfehlung angenommen',
+            'recommendation_rejected': 'Empfehlung abgelehnt',
+        }
+        entity_map_filter = {
+            'alert': 'Warnung',
+            'recommendation': 'Empfehlung',
+            'capacity': 'Kapazität',
+            'transport': 'Transport',
+            'inventory': 'Inventar',
+            'device': 'Gerät',
+            'patient': 'Patient',
+        }
 
         col1, col2, col3 = st.columns(3)
 
         with col1:
-            roles = ["Alle"] + sorted(list(set([a.get('user_role', 'system') for a in audit_log if a.get('user_role')])))
-            selected_role_audit = st.selectbox("Rolle", roles, key="ops_audit_role")
+            # Get unique roles and translate them
+            unique_roles = sorted(list(set([a.get('user_role', 'system') for a in audit_log if a.get('user_role')])))
+            roles_de = [role_map_filter.get(r, r.title()) for r in unique_roles]
+            role_reverse_map = dict(zip(roles_de, unique_roles))
+            roles_de_display = ["Alle"] + roles_de
+            selected_role_de = st.selectbox("Rolle", roles_de_display, key="ops_audit_role")
+            selected_role_audit = None if selected_role_de == "Alle" else role_reverse_map.get(selected_role_de, selected_role_de)
 
         with col2:
-            actions = ["Alle"] + sorted(list(set([a.get('action_type', '') for a in audit_log if a.get('action_type')])))
-            selected_action = st.selectbox("Aktion", actions, key="ops_audit_action")
+            # Get unique actions and translate them
+            unique_actions = sorted(list(set([a.get('action_type', '') for a in audit_log if a.get('action_type')])))
+            actions_de = [action_map_filter.get(act, act.replace('_', ' ').title()) for act in unique_actions]
+            action_reverse_map = dict(zip(actions_de, unique_actions))
+            actions_de_display = ["Alle"] + actions_de
+            selected_action_de = st.selectbox("Aktion", actions_de_display, key="ops_audit_action")
+            selected_action = None if selected_action_de == "Alle" else action_reverse_map.get(selected_action_de, selected_action_de)
 
         with col3:
-            areas = ["Alle"] + sorted(list(set([a.get('entity_type', '') for a in audit_log if a.get('entity_type')])))
-            selected_area_audit = st.selectbox("Bereich", areas, key="ops_audit_area")
+            # Get unique entity types and translate them
+            unique_entities = sorted(list(set([a.get('entity_type', '') for a in audit_log if a.get('entity_type')])))
+            entities_de = [entity_map_filter.get(ent, ent.title()) for ent in unique_entities]
+            entity_reverse_map = dict(zip(entities_de, unique_entities))
+            entities_de_display = ["Alle"] + entities_de
+            selected_area_de = st.selectbox("Bereich", entities_de_display, key="ops_audit_area")
+            selected_area_audit = None if selected_area_de == "Alle" else entity_reverse_map.get(selected_area_de, selected_area_de)
 
         st.markdown("")  # Abstand
         
         # Filter anwenden
         filtered_audit = audit_log
-        if selected_role_audit != "Alle":
+        if selected_role_audit is not None:
             filtered_audit = [a for a in filtered_audit if a.get('user_role') == selected_role_audit]
-        if selected_action != "Alle":
+        if selected_action is not None:
             filtered_audit = [a for a in filtered_audit if a.get('action_type') == selected_action]
-        if selected_area_audit != "Alle":
+        if selected_area_audit is not None:
             filtered_audit = [a for a in filtered_audit if a.get('entity_type') == selected_area_audit]
         
         # Als Tabelle anzeigen
         if filtered_audit:
             # Tabelle mit deutschen Spaltenüberschriften vorbereiten
+            # Deutsche Übersetzungen für Rollen und Aktionen (case-insensitive)
+            role_map = {
+                'system': 'System',
+                'nurse': 'Pflegekraft',
+                'doctor': 'Arzt/Ärztin',
+                'admin': 'Leitung',
+                'manager': 'Manager',
+                'staff': 'Personal',
+                'user': 'Benutzer',
+            }
+            action_map = {
+                'alert acknowledged': 'Warnung bestätigt',
+                'alert_acknowledged': 'Warnung bestätigt',
+                'acknowledge alert': 'Warnung bestätigt',
+                'acknowledge_alert': 'Warnung bestätigt',
+                'recommendation accepted': 'Empfehlung angenommen',
+                'recommendation_accepted': 'Empfehlung angenommen',
+                'accept recommendation': 'Empfehlung angenommen',
+                'accept_recommendation': 'Empfehlung angenommen',
+                'recommendation rejected': 'Empfehlung abgelehnt',
+                'recommendation_rejected': 'Empfehlung abgelehnt',
+                'reject recommendation': 'Empfehlung abgelehnt',
+                'reject_recommendation': 'Empfehlung abgelehnt',
+                'update': 'Aktualisiert',
+                'create': 'Erstellt',
+                'delete': 'Gelöscht',
+                'view': 'Angesehen',
+                'modify': 'Geändert',
+            }
+            entity_map = {
+                'alert': 'Warnung',
+                'recommendation': 'Empfehlung',
+                'capacity': 'Kapazität',
+                'transport': 'Transport',
+                'inventory': 'Inventar',
+                'device': 'Gerät',
+                'patient': 'Patient',
+            }
+            dept_map = {
+                'ER': 'Notaufnahme',
+                'ED': 'Notaufnahme',
+                'ICU': 'Intensivstation',
+                'Surgery': 'Chirurgie',
+                'General Ward': 'Allgemeinstation',
+                'Cardiology': 'Kardiologie',
+                'Neurology': 'Neurologie',
+                'Pediatrics': 'Pädiatrie',
+                'Oncology': 'Onkologie',
+                'Orthopedics': 'Orthopädie',
+                'Maternity': 'Geburtshilfe',
+                'Radiology': 'Radiologie',
+            }
+            
             table_data = []
             for entry in filtered_audit:
+                role = entry.get('user_role', 'system').lower().strip()
+                action = entry.get('action_type', '').lower().strip().replace('_', ' ')
+                entity = entry.get('entity_type', 'N/A').lower().strip()
+                
+                # Extract department from details if available
+                details = entry.get('details', '')
+                department = ''
+                # Look for department in details
+                for dept_key, dept_val in dept_map.items():
+                    if dept_key in details:
+                        department = f" ({dept_val})"
+                        break
+                
                 table_data.append({
                     "Zeit": format_time_ago(entry['timestamp']),
-                    "Rolle": entry.get('user_role', 'system').title(),
-                    "Aktion": entry['action_type'].replace('_', ' ').title(),
-                    "Bereich": entry.get('entity_type', 'N/A'),
-                    "Details": entry.get('details', '')[:50] + "..." if entry.get('details') and len(entry.get('details', '')) > 50 else entry.get('details', '')
+                    "Rolle": role_map.get(role, entry.get('user_role', 'System').title()),
+                    "Aktion": action_map.get(action, entry['action_type'].replace('_', ' ').title()),
+                    "Bereich": entity_map.get(entity, entry.get('entity_type', 'N/A').title()),
+                    "Details": (details[:50] + "..." if details and len(details) > 50 else details) + department
                 })
             
             df_audit = pd.DataFrame(table_data)

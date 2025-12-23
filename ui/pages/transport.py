@@ -26,24 +26,24 @@ def render(db, sim, get_cached_alerts=None, get_cached_recommendations=None, get
     if transport:
         status_filter = st.selectbox("Nach Status filtern", ["Alle", "Ausstehend", "In Bearbeitung", "Abgeschlossen"], key="transport_status")
 
-        status_map = {
+        status_filter_map = {
             "Alle": None,
-            "Ausstehend": "pending",
-            "In Bearbeitung": "in_progress",
-            "Abgeschlossen": "completed"
+            "Ausstehend": ["pending", "ausstehend"],
+            "In Bearbeitung": ["in_progress", "in_bearbeitung"],
+            "Abgeschlossen": ["completed", "abgeschlossen"]
         }
         filtered_transport = transport
         if status_filter != "Alle":
-            filtered_transport = [t for t in transport if t['status'] == status_map[status_filter]]
+            filtered_transport = [t for t in transport if t['status'] in status_filter_map[status_filter]]
 
         # Zusammenfassende Kennzahlen
         col1, col2, col3, col4 = st.columns(4)
         with col1:
-            st.metric("Ausstehend", len([t for t in transport if t['status'] == 'pending']))
+            st.metric("Ausstehend", len([t for t in transport if t['status'] in ['pending', 'ausstehend']]))
         with col2:
-            st.metric("In Bearbeitung", len([t for t in transport if t['status'] == 'in_progress']))
+            st.metric("In Bearbeitung", len([t for t in transport if t['status'] in ['in_progress', 'in_bearbeitung']]))
         with col3:
-            st.metric("Abgeschlossen", len([t for t in transport if t['status'] == 'completed']))
+            st.metric("Abgeschlossen", len([t for t in transport if t['status'] in ['completed', 'abgeschlossen']]))
         with col4:
             avg_time = sum([t['estimated_time_minutes'] or 0 for t in transport]) / len(transport) if transport else 0
             st.metric("Ø geschätzte Zeit", format_duration_minutes(int(avg_time)))
@@ -77,7 +77,7 @@ def render(db, sim, get_cached_alerts=None, get_cached_recommendations=None, get
             status_display = status_map.get(trans['status'].lower().replace(' ', '_'), trans['status'].replace('_', ' ').upper())
             request_type_display = request_type_map.get(trans['request_type'], trans['request_type'].title())
             
-            st.markdown(f"""
+            st.html(f"""
             <div style="background: white; padding: 1rem; border-radius: 8px; margin-bottom: 0.5rem;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <div>
@@ -93,6 +93,6 @@ def render(db, sim, get_cached_alerts=None, get_cached_recommendations=None, get
                     </div>
                 </div>
             </div>
-            """, unsafe_allow_html=True)
+            """)
     else:
         st.markdown(render_empty_state("🚑", "Keine Transportanfragen", "Zurzeit keine aktiven Transportanfragen"), unsafe_allow_html=True)

@@ -48,15 +48,13 @@ PAGES = {
     "📈 Live-Metriken": "metrics",
     "🔮 Vorhersagen": "predictions",
     "⚙️ Betrieb": "operations",
-    "🚨 Warnungen": "alerts",
-    "💡 Empfehlungen": "recommendations",
+
     "🚑 Transport": "transport",
     "📦 Inventar": "inventory",
     "🔧 Gerätewartung": "devices",
     "🏥 Entlassungsplanung": "discharge",
     "🚪 Entlassung": "discharge_tracker",
     "📋 Kapazitätsübersicht": "capacity",
-    "📝 Prüfprotokoll": "audit",
     "💼 Vermögenswerte": "assets"
 }
 
@@ -169,7 +167,7 @@ def get_cached_capacity():
     return db.get_capacity_overview()
 
 # Seitenmodule importieren
-from ui.pages import dashboard, operations, metrics, predictions, alerts, recommendations, transport, inventory, devices, discharge_planning, discharge_tracker, capacity, audit, assets
+from ui.pages import dashboard, operations, metrics, predictions, transport, inventory, devices, discharge_planning, discharge_tracker, capacity, assets
 
 # Seiteninhalt - Routing zu Seitenmodulen
 if page == "Dashboard":
@@ -180,10 +178,6 @@ elif page == "Live-Metriken":
     metrics.render(db, sim)
 elif page == "Vorhersagen":
     predictions.render(db, sim)
-elif page == "Warnungen":
-    alerts.render(db, sim)
-elif page == "Empfehlungen":
-    recommendations.render(db, sim)
 elif page == "Transport":
     transport.render(db, sim)
 elif page == "Inventar":
@@ -196,8 +190,6 @@ elif page == "Entlassung":
     discharge_tracker.render(db, sim)
 elif page == "Kapazitätsübersicht":
     capacity.render(db, sim)
-elif page == "Prüfprotokoll":
-    audit.render(db, sim)
 elif page == "Vermögenswerte":
     assets.render(db, sim)
 

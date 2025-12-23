@@ -25,8 +25,8 @@ def render(db, sim, get_cached_alerts=None, get_cached_recommendations=None, get
     
     if devices:
         # Risikozusammenfassung
-        high_risk = len([d for d in devices if d['risk_level'] == 'high'])
-        medium_risk = len([d for d in devices if d['risk_level'] == 'medium'])
+        high_risk = len([d for d in devices if d['risk_level'] in ['high', 'hoch']])
+        medium_risk = len([d for d in devices if d['risk_level'] in ['medium', 'mittel']])
 
         col1, col2, col3 = st.columns(3)
         with col1:
@@ -45,9 +45,12 @@ def render(db, sim, get_cached_alerts=None, get_cached_recommendations=None, get
             
             # German translation for device card labels
             risk_label = {
-                'high': 'HOHES RISIKO',
-                'medium': 'MITTLERES RISIKO',
-                'low': 'GERINGES RISIKO'
+                'high': 'HOCH',
+                'medium': 'MITTEL',
+                'low': 'NIEDRIG',
+                'hoch': 'HOCH',
+                'mittel': 'MITTEL',
+                'niedrig': 'NIEDRIG'
             }.get(device['risk_level'], device['risk_level'].upper())
             status_label = {
                 'active': 'AKTIV',
@@ -55,13 +58,14 @@ def render(db, sim, get_cached_alerts=None, get_cached_recommendations=None, get
                 'maintenance': 'IN WARTUNG',
                 'pending': 'AUSSTEHEND',
                 'in_use': 'IN BENUTZUNG',
+                'in_betrieb': 'IN BETRIEB',
                 'available': 'VERFÜGBAR',
                 'unavailable': 'NICHT VERFÜGBAR',
                 'in_progress': 'IN BEARBEITUNG',
                 'completed': 'ABGESCHLOSSEN'
-            }.get(device['status'], device['status'].upper())
+            }.get(device['status'], device['status'].replace('_', ' ').upper())
             
-            st.markdown(f"""
+            st.html(f"""
             <div style="background: white; padding: 1.5rem; border-radius: 8px; margin-bottom: 1rem; border-left: 4px solid {risk_color};">
                 <div style="display: flex; justify-content: space-between; align-items: start;">
                     <div style="flex: 1;">
@@ -79,7 +83,7 @@ def render(db, sim, get_cached_alerts=None, get_cached_recommendations=None, get
                     </div>
                 </div>
             </div>
-            """, unsafe_allow_html=True)
+            """)
         
         # Risk distribution chart
         st.markdown("---")
@@ -87,14 +91,21 @@ def render(db, sim, get_cached_alerts=None, get_cached_recommendations=None, get
         df_dev = pd.DataFrame(devices)
         risk_counts = df_dev['risk_level'].value_counts()
         
+        # Map German risk levels to display names for pie chart
+        risk_label_map = {'high': 'Hoch', 'medium': 'Mittel', 'low': 'Niedrig', 'hoch': 'Hoch', 'mittel': 'Mittel', 'niedrig': 'Niedrig'}
+        risk_display_names = [risk_label_map.get(name, name) for name in risk_counts.index]
+        
         fig = px.pie(
             values=risk_counts.values,
-            names=risk_counts.index,
+            names=risk_display_names,
             color=risk_counts.index,
             color_discrete_map={
                 'high': '#DC2626',
                 'medium': '#F59E0B',
-                'low': '#10B981'
+                'low': '#10B981',
+                'hoch': '#DC2626',
+                'mittel': '#F59E0B',
+                'niedrig': '#10B981'
             }
         )
         fig.update_layout(

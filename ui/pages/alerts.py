@@ -101,9 +101,10 @@ def render(db, sim, get_cached_alerts=None, get_cached_recommendations=None, get
                 """, unsafe_allow_html=True)
             
             with col2:
+                st.markdown("<div style='height: 1rem;'></div>", unsafe_allow_html=True)
                 if st.button("Bestätigen", key=f"ack_{alert['id']}", use_container_width=True):
                     db.acknowledge_alert(alert['id'])
-                    st.rerun()
+                    st.success("✅ Warnung bestätigt")
     else:
         st.markdown("""
         <div class="empty-state">
